@@ -17,7 +17,7 @@ public:
     ProxyWindow(const ProxyWindow &) = delete;
     ProxyWindow &operator=(const ProxyWindow &) = delete;
 
-    bool create(HINSTANCE instance, AgentProtocol *protocol);
+    bool create(HINSTANCE instance, AgentProtocol *protocol, bool trace_input);
     void destroy();
     HWND hwnd() const;
     bool owns_window(std::uint64_t window_id) const;
@@ -33,6 +33,7 @@ private:
     static LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
     CwPointerLocation make_pointer_location(LPARAM lparam) const;
     CwPointerLocation current_cursor_location() const;
+    void trace_location(const char *event, const CwPointerLocation &location) const;
     void send_button(UINT message, WPARAM wparam, LPARAM lparam);
     void send_wheel(WPARAM wparam, LPARAM lparam);
     void paint(HDC dc);
@@ -47,6 +48,7 @@ private:
     CwWindowPresent presentation_;
     std::uint32_t pressed_button_mask_;
     bool tracking_mouse_;
+    bool trace_input_;
 };
 
 #endif

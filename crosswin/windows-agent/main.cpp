@@ -23,7 +23,7 @@ class AgentApplication {
 public:
     bool initialize(HINSTANCE instance, const AgentOptions &options) {
         options_ = options;
-        if (!proxy_.create(instance, &protocol_)) {
+        if (!proxy_.create(instance, &protocol_, options.trace_input)) {
             std::fprintf(stderr, "[init] CreateWindowExW/RegisterClassW failed: Win32 error=%lu\n",
                          static_cast<unsigned long>(GetLastError()));
             return false;

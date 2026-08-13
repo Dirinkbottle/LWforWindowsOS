@@ -1,0 +1,163 @@
+Stage 6：真实 xdg_toplevel.move 跨屏拖动（Windows 必测）
+=========================================================
+
+目标与边界
+----------
+
+本阶段验证的唯一窗口 owner 是 Linux Weston。Windows 的 proxy HWND 只会在收到
+Linux `WINDOW_PRESENT` 后由 `SetWindowPos` 跟随；它绝不能根据 `WM_MOUSEMOVE`
+自行决定窗口位置。
+
+Windows 事件会通过已有 CWNP `POINTER_*` 消息送往 Weston。Weston 为此创建名为
+`crosswin-proxy` 的**仅指针** seat；不转发键盘，不替代 Deskflow。Deskflow 仍只
+负责让物理光标跨显示器。已经由 proxy 转发的鼠标事件，不能再被另一条路径直接
+注入 Weston，否则会产生双重输入。
+
+1. 编译
+---------
+
+Linux：
+
+    cd /home/inkbottle/othersrc/LWforWindowsOS
+    ninja -C weston/build-stage4 \
+      frontend/weston desktop-shell/desktop-shell.so \
+      libweston/backend-wayland/wayland-backend.so \
+      crosswin/crosswin-stage4.so crosswin/crosswin-stage5-client
+
+Windows：在仓库的 `crosswin` 目录双击 `build-windows-agent.cmd`。完成后应有：
+
+    crosswin\build\crosswin-agent.exe
+
+2. 选择正确的远端 x 坐标
+---------------------------
+
+`--crosswin-x` 必须等于 Linux 本地输出的逻辑右边界，两个区域才连续。
+
+* 当前嵌套测试 Weston 的日志若为 `Creating 1024x640 wayland output`，使用
+  `--crosswin-x=1024`；
+* 若真实 Linux 本地逻辑输出宽度为 1920，使用 `--crosswin-x=1920`（默认值）。
+
+不要在 `1024` 宽的嵌套输出中仍使用 `x=1920` 来测跨边界拖动；中间的
+`[1024,1920)` 没有输出，Weston 会把指针夹在边界，这是正确行为而不是 Windows
+端问题。
+
+3. 启动 Linux Weston 导出端
+----------------------------
+
+下面命令以嵌套测试的 `1024` 宽本地输出为例。`--crosswin-initial-x=200` 让测试
+窗口先完整出现在 Linux 一侧，便于验证 Linux → Windows 拖动。真实 1920 宽输出
+时只需将 `--crosswin-x=1024` 改成 `--crosswin-x=1920`。
+
+    export CWROOT=/home/inkbottle/othersrc/LWforWindowsOS
+    export WESTON_MODULE_MAP="crosswin-stage4.so=$CWROOT/weston/build-stage4/crosswin/crosswin-stage4.so;wayland-backend.so=$CWROOT/weston/build-stage4/libweston/backend-wayland/wayland-backend.so;desktop-shell.so=$CWROOT/weston/build-stage4/desktop-shell/desktop-shell.so;weston-desktop-shell=$CWROOT/weston/build-stage4/clients/weston-desktop-shell;weston-keyboard=$CWROOT/weston/build-stage4/clients/weston-keyboard"
+    "$CWROOT/weston/build-stage4/frontend/weston" \
+      --socket=crosswin-stage6 \
+      --backend=wayland-backend.so \
+      --modules=crosswin-stage4.so \
+      --use-pixman --no-config \
+      --crosswin-x=1024 \
+      --crosswin-export --crosswin-port=44600 \
+      --crosswin-initial-x=200 --crosswin-initial-y=80 \
+      --crosswin-trace-protocol --crosswin-trace-present \
+      --crosswin-trace-input
+
+启动成功时至少应看到：
+
+    crosswin-stage5: listening on 0.0.0.0:44600 (pointer seat=crosswin-proxy)
+    crosswin-stage4: remote output 'crosswin-remote' enabled global=[1024,0 1920x1080]
+
+4. 启动 Windows Agent
+----------------------
+
+将 IP 改成 Windows 虚机实际可访问的 Linux 地址：
+
+    build\crosswin-agent.exe --host 192.168.122.1 --port 44600 ^
+      --trace-protocol --trace-present --trace-input
+
+`--trace-input` 现在会打印发送给 Linux 的 `POINTER_ENTER`、`POINTER_MOTION`、
+`POINTER_BUTTON` 和 `POINTER_CAPTURE_LOST`，例如：
+
+    [input tx] type=POINTER_BUTTON win=1 present=7 client=[100,10] output=[180,90]
+    [input tx] button=1 state=1
+
+5. 启动真实 Wayland 测试窗口
+-----------------------------
+
+在 Linux 的另一个终端执行：
+
+    export WAYLAND_DISPLAY=crosswin-stage6
+    "$CWROOT/weston/build-stage4/crosswin/crosswin-stage5-client" --run-ms 120000
+
+窗口为固定 800x600：顶部 32px 橙色区域是唯一拖动条；下面为四色区域与白色 X。
+它保持 120 秒，足够完成多项测试。Linux 客户端在拖动条收到真实 `wl_pointer`
+button serial 后才调用 `xdg_toplevel.move`，不会伪造 serial。
+
+6. 必测 A：Linux → Windows 慢速拖动
+--------------------------------------
+
+1. 在 Linux 可见窗口的橙色拖动条按住左键；
+2. 缓慢向右拖动，先停在窗口左右各 400px 的 50/50 状态；
+3. 继续向右，直到窗口完全在 Windows；
+4. 松开左键。
+
+通过条件：
+
+* 50/50 时 Windows 日志的 `present apply` 应包含约 `src=[400,0 400x600]`
+  与 `dst=[0,80 400x600]`；
+* 完全进入 Windows 后应为 `src=[0,0 800x600]`，且 HWND 为 800x600；
+* Linux 日志须有 `crosswin-stage6: xdg move begin`、连续的
+  `crosswin-stage6: view move` 与对应 `present`；
+* Windows 侧只能在随后收到的 `[present apply]` 中移动 HWND，不能先自行跳动。
+
+当光标由 Deskflow 进入 Windows 屏幕后，继续按住同一次左键在 proxy HWND 上移动。
+Windows proxy 事件会驱动 Weston 正在进行的同一个 shell move grab。测试期间不要
+再启动其他鼠标注入或把同一 Windows 点击直接回注入 Linux。
+
+7. 必测 B：Windows → Linux 反向拖动
+--------------------------------------
+
+窗口完全位于 Windows 后，在 Windows proxy 的橙色顶端 32px 内按住左键，向左拖：
+
+    完全 Windows → 50/50 → 完全 Linux
+
+通过条件：
+
+* Linux 日志的按下事件包含
+  `source=windows-proxy ... xdg-move-serial-delivered`；
+* Linux client stderr 包含 `xdg_toplevel.move source=windows-proxy`；
+* 50/50 的 source/destination 为 400/400；
+* 完全 Linux 时 Windows 收到 `visible=0`，proxy HWND 隐藏，但 Linux 窗口仍在；
+* 松开后窗口不回弹、不居中、不被 Windows 改写位置。
+
+8. 必测 C：静态缓冲区与快速往返
+----------------------------------
+
+测试 client 不会在拖动期间提交新 wl_shm buffer。按住拖动条快速执行：
+
+    Linux → Windows → Linux → Windows
+
+观察 Linux 日志：拖动前只有一次
+
+    tx WINDOW_FRAME bytes=1920024
+
+拖动期间应有多条 `tx WINDOW_PRESENT bytes=56`，但不应反复出现新的
+`WINDOW_FRAME`。Windows 画面不得消失、重复 HWND、残留错误裁剪或出现 1 帧旧位置。
+
+9. 必测 D：边界与断线
+-----------------------
+
+* 将窗口右边精确停在 remote 左边界：Windows 必须隐藏，不能留下 1px ghost HWND；
+* 再向右移动 1px：Windows 必须恰好显示 1px 宽；
+* 停在 50/50 时关闭 Windows agent：Weston 不得崩溃、死锁或移动窗口回 Linux；
+* 重新运行 Windows agent：应重新收到 `WINDOW_CREATE`、一次 `WINDOW_FRAME` 和当前
+  `WINDOW_PRESENT`，恢复同一规范几何。
+
+10. 收集失败信息
+-----------------
+
+若任何一项失败，请同时保存：
+
+* Linux Weston 从启动到 client 退出的完整日志；
+* Windows agent 的完整 stdout；
+* 运行时实际采用的 `--crosswin-x` 和 Linux 本地输出逻辑宽度；
+* 是否有 Deskflow 之外的鼠标注入路径。

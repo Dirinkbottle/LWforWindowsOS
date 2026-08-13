@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdio>
 #include <cstring>
 #include <limits>
 
@@ -31,13 +32,14 @@ ProxyWindow::ProxyWindow()
       framebuffer_{},
       presentation_{},
       pressed_button_mask_(0U),
-      tracking_mouse_(false) {}
+      tracking_mouse_(false),
+      trace_input_(false) {}
 
 ProxyWindow::~ProxyWindow() {
     destroy();
 }
 
-bool ProxyWindow::create(HINSTANCE instance, AgentProtocol *protocol) {
+bool ProxyWindow::create(HINSTANCE instance, AgentProtocol *protocol, bool trace_input) {
     WNDCLASSW window_class{};
 
     if (protocol == nullptr || hwnd_ != nullptr) {
@@ -51,6 +53,7 @@ bool ProxyWindow::create(HINSTANCE instance, AgentProtocol *protocol) {
         return false;
     }
     protocol_ = protocol;
+    trace_input_ = trace_input;
     hwnd_ = CreateWindowExW(WS_EX_TOOLWINDOW, kProxyClassName, L"",
                             WS_POPUP, 0, 0, 1, 1, nullptr, nullptr, instance, this);
     return hwnd_ != nullptr;
@@ -178,6 +181,16 @@ CwPointerLocation ProxyWindow::current_cursor_location() const {
     };
 }
 
+void ProxyWindow::trace_location(const char *event, const CwPointerLocation &location) const {
+    if (trace_input_) {
+        std::printf("[input tx] type=%s win=%llu present=%llu client=[%d,%d] output=[%d,%d]\n",
+                    event, static_cast<unsigned long long>(location.window_id),
+                    static_cast<unsigned long long>(location.presentation_sequence),
+                    location.client_x, location.client_y,
+                    location.output_x, location.output_y);
+    }
+}
+
 void ProxyWindow::send_button(UINT message, WPARAM wparam, LPARAM lparam) {
     CwPointerButtonEvent event{};
     std::uint32_t button = 0U;
@@ -215,6 +228,10 @@ void ProxyWindow::send_button(UINT message, WPARAM wparam, LPARAM lparam) {
             ReleaseCapture();
         }
     }
+    trace_location("POINTER_BUTTON", event.location);
+    if (trace_input_) {
+        std::printf("[input tx] button=%u state=%u\n", event.button, event.state);
+    }
     (void)protocol_->send_pointer_button(event);
 }
 
@@ -235,6 +252,10 @@ void ProxyWindow::send_wheel(WPARAM wparam, LPARAM lparam) {
     };
     wheel.delta_x = 0;
     wheel.delta_y = GET_WHEEL_DELTA_WPARAM(wparam);
+    trace_location("POINTER_WHEEL", wheel.location);
+    if (trace_input_) {
+        std::printf("[input tx] wheel=[%d,%d]\n", wheel.delta_x, wheel.delta_y);
+    }
     (void)protocol_->send_pointer_wheel(wheel);
 }
 
@@ -270,18 +291,26 @@ LRESULT ProxyWindow::handle_message(UINT message, WPARAM wparam, LPARAM lparam) 
         if (!tracking_mouse_) {
             TRACKMOUSEEVENT tracking{sizeof(tracking), TME_LEAVE, hwnd_, 0U};
             tracking_mouse_ = TrackMouseEvent(&tracking) != FALSE;
-            (void)protocol_->send_pointer_location(CW_MESSAGE_POINTER_ENTER,
-                                                   make_pointer_location(lparam));
+            const CwPointerLocation location = make_pointer_location(lparam);
+            trace_location("POINTER_ENTER", location);
+            (void)protocol_->send_pointer_location(CW_MESSAGE_POINTER_ENTER, location);
         }
         motion.location = make_pointer_location(lparam);
         motion.button_mask = pressed_button_mask_;
+        trace_location("POINTER_MOTION", motion.location);
+        if (trace_input_) {
+            std::printf("[input tx] button_mask=%u\n", motion.button_mask);
+        }
         (void)protocol_->send_pointer_motion(motion);
         return 0;
     }
     case WM_MOUSELEAVE:
         tracking_mouse_ = false;
-        (void)protocol_->send_pointer_location(CW_MESSAGE_POINTER_LEAVE,
-                                               current_cursor_location());
+        {
+            const CwPointerLocation location = current_cursor_location();
+            trace_location("POINTER_LEAVE", location);
+            (void)protocol_->send_pointer_location(CW_MESSAGE_POINTER_LEAVE, location);
+        }
         return 0;
     case WM_LBUTTONDOWN:
     case WM_LBUTTONUP:
@@ -299,6 +328,11 @@ LRESULT ProxyWindow::handle_message(UINT message, WPARAM wparam, LPARAM lparam) 
             const CwPointerCaptureLost lost{window_id_, presentation_.presentation_sequence,
                                             timestamp_ms()};
             pressed_button_mask_ = 0U;
+            if (trace_input_) {
+                std::printf("[input tx] type=POINTER_CAPTURE_LOST win=%llu present=%llu\n",
+                            static_cast<unsigned long long>(lost.window_id),
+                            static_cast<unsigned long long>(lost.presentation_sequence));
+            }
             (void)protocol_->send_pointer_capture_lost(lost);
         }
         return 0;

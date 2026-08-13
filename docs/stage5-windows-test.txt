@@ -64,11 +64,11 @@ Windows 预期第一条协议日志：
 `XDG_RUNTIME_DIR`：
 
     export WAYLAND_DISPLAY=crosswin-stage5
-    "$CWROOT/weston/build-stage4/crosswin/crosswin-stage5-client"
+    "$CWROOT/weston/build-stage4/crosswin/crosswin-stage5-client" --run-ms 2000
 
 这个 client 固定创建一个 800x600、scale=1、XRGB8888 `wl_shm`
 `xdg_toplevel`：顶部 32px 是橙色拖动条，下面是四块不同颜色的区域和白色
-对角线。它存活约 2 秒后自动退出，因此无需手动关闭。
+对角线。这里指定它存活约 2 秒后自动退出，因此无需手动关闭。
 
 Linux 通过条件：
 
