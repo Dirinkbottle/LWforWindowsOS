@@ -6,7 +6,7 @@ COMMON = common/protocol.c
 SESSION = fake-server/pattern.c fake-server/session.c
 BINDIR = build
 
-.PHONY: all test integration input-integration sanitize clean windows-build-help
+.PHONY: all test integration input-integration sanitize clean
 
 all: $(BINDIR)/fake-server $(BINDIR)/protocol_test $(BINDIR)/session_test $(BINDIR)/scripted-agent $(BINDIR)/input-agent
 
@@ -43,11 +43,6 @@ sanitize:
 	$(MAKE) clean
 	$(MAKE) CFLAGS='-std=c11 -O1 -g $(WARNINGS) -fsanitize=address,undefined -fno-omit-frame-pointer' test
 	$(MAKE) -C $(GEOMETRY_DIR) sanitize
-
-windows-build-help:
-	@echo "From a Visual Studio x64 Native Tools prompt:"
-	@echo "  cl /nologo /std:c11 /W4 /WX /c common\\protocol.c /Focommon\\protocol.obj"
-	@echo "  cl /nologo /std:c++17 /W4 /WX /EHsc /Icommon /Iwindows-agent windows-agent\\main.cpp windows-agent\\protocol.cpp windows-agent\\proxy_window.cpp common\\protocol.obj /link ws2_32.lib user32.lib gdi32.lib /out:crosswin-agent.exe"
 
 clean:
 	rm -rf $(BINDIR)

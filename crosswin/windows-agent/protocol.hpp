@@ -3,6 +3,21 @@
 
 #include "../common/protocol.h"
 
+/* Prevent Windows headers from replacing std::numeric_limits<T>::max(). */
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
+/*
+ * The agent intentionally uses WSAAsyncSelect: socket notifications and HWND
+ * messages are processed by one UI thread.  Recent Windows SDKs mark this
+ * established WinSock API deprecated in favour of WSAEventSelect; suppress
+ * only that SDK warning so /W4 /WX can remain enabled.
+ */
+#ifndef _WINSOCK_DEPRECATED_NO_WARNINGS
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#endif
+
 #include <winsock2.h>
 #include <windows.h>
 

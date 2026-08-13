@@ -39,7 +39,10 @@ typedef struct {
     bool hello_received;
     bool awaiting_present_ack;
     uint64_t awaiting_presentation_sequence;
+    bool deferred_presentation_pending;
+    CwPresentationState deferred_presentation;
     size_t script_step;
+    bool destroy_sent;
     uint64_t next_wire_sequence;
     uint8_t *framebuffer;
     CwFakeServerSession session;
@@ -215,11 +218,41 @@ static bool send_present(Server *server, const CwPresentationState *presentation
     return true;
 }
 
+/*
+ * Preserve presentation ACK ordering on TCP.  Drag motions can arrive faster
+ * than HWND presentation/ACK, so only one PRESENT may be in flight.  Linux
+ * still computes and records every canonical state for input-sequence lookup;
+ * while waiting, the unsent states are coalesced to the newest one.
+ */
+static bool send_or_defer_present(
+    Server *server,
+    const CwPresentationState *presentation,
+    bool already_recorded) {
+    if (server->awaiting_present_ack) {
+        if (!already_recorded &&
+            !cw_fake_server_record_presentation(&server->session, presentation)) {
+            return false;
+        }
+        server->deferred_presentation = *presentation;
+        server->deferred_presentation_pending = true;
+        if (server->options.trace_present) {
+            printf("[present defer] seq=%" PRIu64 " replaces pending presentation\n",
+                   presentation->sequence);
+        }
+        return true;
+    }
+    return send_present(server, presentation, already_recorded);
+}
+
 static bool send_destroy(Server *server) {
     uint8_t payload[8];
 
     cw_store_u64_le(payload, server->session.window_id);
-    return send_message(server, CW_MESSAGE_WINDOW_DESTROY, payload, sizeof(payload));
+    if (!send_message(server, CW_MESSAGE_WINDOW_DESTROY, payload, sizeof(payload))) {
+        return false;
+    }
+    server->destroy_sent = true;
+    return true;
 }
 
 static bool start_after_hello(Server *server) {
@@ -250,6 +283,12 @@ static bool handle_present_ack(Server *server, const uint8_t *payload, uint32_t 
     if (server->options.trace_present) {
         printf("[present ack] win=%" PRIu64 " seq=%" PRIu64 "\n",
                ack.window_id, ack.presentation_sequence);
+    }
+    if (server->deferred_presentation_pending) {
+        CwPresentationState deferred = server->deferred_presentation;
+
+        server->deferred_presentation_pending = false;
+        return send_present(server, &deferred, true);
     }
     if (!server->options.script_stage2) {
         return true;
@@ -315,7 +354,7 @@ static bool handle_pointer_motion(Server *server, const uint8_t *payload, uint32
             printf("[grab move] window=(%" PRId32 ",%" PRId32 ")\n",
                    server->session.window_global.x, server->session.window_global.y);
         }
-        return send_present(server, &result.generated_presentation, true);
+        return send_or_defer_present(server, &result.generated_presentation, true);
     }
     return true;
 }
@@ -466,7 +505,11 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
     }
 
-    server = (Server){client, options, false, false, 0U, 0U, 1U, NULL, {0}};
+    server = (Server){
+        .client_fd = client,
+        .options = options,
+        .next_wire_sequence = 1U,
+    };
     server.framebuffer = malloc((size_t)FAKE_SURFACE_STRIDE * FAKE_SURFACE_HEIGHT);
     if (server.framebuffer == NULL ||
         !cw_pattern_generate(server.framebuffer, FAKE_SURFACE_WIDTH, FAKE_SURFACE_HEIGHT,
@@ -500,7 +543,12 @@ int main(int argc, char **argv) {
             break;
         }
         if (errno != EINTR) {
-            perror("recv");
+            if (server.destroy_sent &&
+                (errno == ECONNRESET || errno == ENOTCONN)) {
+                printf("[script] peer closed after WINDOW_DESTROY\n");
+            } else {
+                perror("recv");
+            }
             break;
         }
     }

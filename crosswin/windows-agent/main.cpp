@@ -23,10 +23,17 @@ class AgentApplication {
 public:
     bool initialize(HINSTANCE instance, const AgentOptions &options) {
         options_ = options;
-        if (!proxy_.create(instance, &protocol_) ||
-            !protocol_.connect_to(options.host, options.port, proxy_.hwnd(),
-                                  &AgentApplication::protocol_callback, this) ||
-            !protocol_.send_hello()) {
+        if (!proxy_.create(instance, &protocol_)) {
+            std::fprintf(stderr, "[init] CreateWindowExW/RegisterClassW failed: Win32 error=%lu\n",
+                         static_cast<unsigned long>(GetLastError()));
+            return false;
+        }
+        if (!protocol_.connect_to(options.host, options.port, proxy_.hwnd(),
+                                  &AgentApplication::protocol_callback, this)) {
+            return false; /* connect_to printed the precise WinSock stage/error. */
+        }
+        if (!protocol_.send_hello()) {
+            std::fprintf(stderr, "[init] HELLO send failed: WinSock error=%d\n", WSAGetLastError());
             return false;
         }
         return true;
@@ -38,6 +45,7 @@ public:
         while (GetMessageW(&message, nullptr, 0U, 0U) > 0) {
             if (message.message == CW_WM_SOCKET && message.hwnd == proxy_.hwnd()) {
                 if (!protocol_.on_socket_event(message.wParam, message.lParam)) {
+                    std::fprintf(stderr, "[socket] connection closed or protocol processing failed\n");
                     protocol_.close();
                     proxy_.destroy();
                     return EXIT_FAILURE;

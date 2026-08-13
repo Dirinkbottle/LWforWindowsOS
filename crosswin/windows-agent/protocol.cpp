@@ -4,6 +4,7 @@
 
 #include <array>
 #include <climits>
+#include <cstdio>
 #include <cstring>
 
 AgentProtocol::AgentProtocol()
@@ -31,21 +32,30 @@ bool AgentProtocol::connect_to(
     sockaddr_in address{};
 
     if (host == nullptr || notification_window == nullptr || callback == nullptr || connected()) {
+        std::fprintf(stderr, "[init] invalid socket setup arguments\n");
         return false;
     }
     socket_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (socket_ == INVALID_SOCKET) {
+        std::fprintf(stderr, "[init] socket() failed: WinSock error=%d\n", WSAGetLastError());
         return false;
     }
     address.sin_family = AF_INET;
     address.sin_port = htons(port);
-    if (InetPtonA(AF_INET, host, &address.sin_addr) != 1 ||
-        connect(socket_, reinterpret_cast<const sockaddr *>(&address), sizeof(address)) == SOCKET_ERROR) {
+    if (InetPtonA(AF_INET, host, &address.sin_addr) != 1) {
+        std::fprintf(stderr, "[init] --host must be a numeric IPv4 address: %s\n", host);
+        close();
+        return false;
+    }
+    if (connect(socket_, reinterpret_cast<const sockaddr *>(&address), sizeof(address)) == SOCKET_ERROR) {
+        std::fprintf(stderr, "[init] TCP connect to %s:%u failed: WinSock error=%d\n",
+                     host, static_cast<unsigned>(port), WSAGetLastError());
         close();
         return false;
     }
     if (WSAAsyncSelect(socket_, notification_window, CW_WM_SOCKET,
                        FD_READ | FD_WRITE | FD_CLOSE) == SOCKET_ERROR) {
+        std::fprintf(stderr, "[init] WSAAsyncSelect failed: WinSock error=%d\n", WSAGetLastError());
         close();
         return false;
     }

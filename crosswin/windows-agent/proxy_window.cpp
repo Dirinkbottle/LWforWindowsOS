@@ -315,7 +315,14 @@ LRESULT CALLBACK ProxyWindow::window_proc(HWND hwnd, UINT message, WPARAM wparam
     if (message == WM_NCCREATE) {
         const auto *create = reinterpret_cast<const CREATESTRUCTW *>(lparam);
         window = static_cast<ProxyWindow *>(create->lpCreateParams);
+        if (window == nullptr) {
+            return FALSE;
+        }
+        /* CreateWindowExW sends later creation messages before it returns. */
+        window->hwnd_ = hwnd;
         SetWindowLongPtrW(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(window));
+        /* WM_NCCREATE must return TRUE or CreateWindowExW aborts creation. */
+        return TRUE;
     } else {
         window = reinterpret_cast<ProxyWindow *>(GetWindowLongPtrW(hwnd, GWLP_USERDATA));
     }

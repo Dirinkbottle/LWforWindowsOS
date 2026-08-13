@@ -63,9 +63,11 @@ surface `(353,211)`, then exercises a Linux-owned 100-pixel fake drag.
 
 ## Windows build and visual check
 
-From a Visual Studio x64 Native Tools prompt, run `make windows-build-help` for
-the concrete `/W4 /WX` commands.  Then start the server and agent in separate
-terminals:
+On Windows, double-click `build-windows-agent.cmd`.  It locates a Visual Studio
+x64 C++ toolchain, builds with `/W4 /WX`, and writes
+`build/crosswin-agent.exe`.  From a Visual Studio x64 Native Tools prompt, you
+can alternatively run `make windows-build-help` for the concrete commands.
+Then start the server and agent in separate terminals:
 
 ```text
 ./build/fake-server --listen 0.0.0.0 --port 44600 --script-stage2 --trace-present

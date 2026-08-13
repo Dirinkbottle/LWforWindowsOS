@@ -134,6 +134,20 @@ mkdir build
 
 ### 3. 编译 Windows Agent
 
+最简单的方式是在 Windows 文件资源管理器中双击：
+
+```text
+crosswin\build-windows-agent.cmd
+```
+
+脚本会自动查找 Visual Studio 的 x64 C++ 工具链，创建 `build\`，并生成：
+
+```text
+crosswin\build\crosswin-agent.exe
+```
+
+也可以从“x64 Native Tools Command Prompt for VS 2022”手动执行以下命令。
+
 先以 C11 编译共享协议实现：
 
 ```bat
