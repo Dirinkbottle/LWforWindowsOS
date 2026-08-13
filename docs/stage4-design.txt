@@ -1,0 +1,103 @@
+Stage 4 design: compositor-owned remote desktop geometry
+=========================================================
+
+Scope and invariants
+--------------------
+
+This stage only establishes a compositor-owned remote desktop rectangle. It
+does not implement keyboard forwarding, pointer forwarding, Deskflow,
+Synergy, Barrier, or any replacement for them. Deskflow remains the sole
+owner of physical keyboard/mouse sharing.
+
+The coordinate unit is global logical pixels. All rectangle calculations use
+the existing Stage 1 Geometry Oracle (`geometry/geometry.c`); the Weston
+module links that source rather than reproducing rectangle arithmetic.
+
+Weston source checked before implementation
+-------------------------------------------
+
+* source: `weston/`
+* commit: `d1dd22307afb5cc6773e9a12611b520f14bf136f`
+  (`16.0.0-142-gd1dd2230`)
+* source project version: 16.0.90, libweston ABI major 17
+* intended build configuration: `weston/build-stage4`, Wayland + headless
+  backends, GL/Vulkan/DRM/X11 disabled. The host currently lacks the
+  `wayland-protocols` development package, so Meson stops at dependency
+  discovery before creating a usable configuration; the exact command and
+  remedy are in the Stage 4 test section.
+
+Route selected: A, a real virtual `weston_output`
+--------------------------------------------------
+
+`crosswin-stage4.so` is a Weston frontend module. It creates its own minimal
+renderless virtual backend, with one head named `crosswin-remote`, and
+configures/enables an ordinary `weston_output` at the requested global
+location. It performs no KMS connector discovery, scanout, or physical input
+device creation. The headless backend is intentionally not re-initialized:
+Weston 16 registers its headless output API once per compositor, so a second
+instance would fail during module loading.
+
+This is deliberately not an exporter-private rectangle. Enabling the output
+adds it to `compositor->output_list`, creates the normal `wl_output` global,
+and gives it ordinary output geometry. In the inspected Weston source,
+`weston_pointer_clamp()` walks that list and calls
+`weston_output_contains_coord()`; the remote rectangle consequently becomes
+part of the normal pointer domain without a Crosswin-specific clamp patch.
+
+Default geometry is Linux `[0,0 1920x1080]` plus remote
+`[1920,0 1920x1080]`. Override it only with module options:
+
+    --crosswin-width=1920 --crosswin-height=1080 \
+    --crosswin-x=1920 --crosswin-y=0 --crosswin-trace-stage4
+
+`--crosswin-probe-pointer` is a test-only option. It asks Weston's existing
+pointer path to move to `[crosswin-x+1, crosswin-y+1]` and logs the requested
+and actually accepted global coordinates. It creates no physical input device
+and must not be used as an input-forwarding mechanism.
+
+Implementation map
+------------------
+
+* module: `weston/crosswin/crosswin-stage4.c`
+* build declaration: `weston/crosswin/meson.build`
+* lifecycle: the virtual backend owns and destroys its output/head during
+  libweston's normal backend shutdown
+* output contract: scale 1, normal transform, one head, normal Weston
+  `weston_output_enable()` lifecycle
+
+Build and Stage 4 gate
+----------------------
+
+Install the missing Arch dependency once:
+
+    sudo pacman -S wayland-protocols
+
+Then configure and build:
+
+    meson setup --wipe weston/build-stage4 weston \
+      -Dbackend-default=wayland -Dbackend-drm=false -Dbackend-x11=false \
+      -Dbackend-wayland=true -Dbackend-headless=true \
+      -Dbackend-rdp=false -Dbackend-vnc=false -Dbackend-pipewire=false \
+      -Drenderer-gl=false -Drenderer-vulkan=false -Dxwayland=false \
+      -Dsystemd=false -Dcolor-management-lcms=false \
+      -Dimage-jpeg=false -Dimage-webp=false
+    ninja -C weston/build-stage4
+
+Run in a nested Wayland session (the module path is mapped by the build):
+
+    weston/build-stage4/frontend/weston \
+      --backend=wayland-backend.so --modules=crosswin-stage4.so \
+      --crosswin-trace-stage4 --crosswin-probe-pointer
+
+Pass criteria:
+
+1. Weston logs `crosswin-stage4: remote output ... global=[1920,0 1920x1080]`.
+2. A `wl_output` client sees `crosswin-remote`; it is not just an exporter
+   bookkeeping rectangle.
+3. A Stage 1 test using the same default rectangles reports full remote and
+   hybrid intersection correctly; `make -C geometry test` is mandatory.
+4. The test-only pointer probe logs `requested=[1921,1] actual=[1921,1]`.
+   This demonstrates that the normal compositor pointer domain includes the
+   remote output; it is not input forwarding.
+
+Stage 5 must not start until these checks pass on the target nested Weston.

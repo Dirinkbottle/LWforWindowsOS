@@ -146,6 +146,7 @@ static void test_linux_owned_fake_grab(void) {
     CHECK(result.generated_presentation.source_rect.x == 120);
     CHECK(result.generated_presentation.source_rect.w == 680);
     CHECK(result.generated_presentation.destination_rect.x == 0);
+    CHECK(cw_fake_server_record_presentation(&session, &result.generated_presentation));
     CHECK(cw_fake_server_handle_button(&session,
                                        &(CwPointerButtonEvent){
                                            {1U, 43U, 300, 100, 300, 400, 3U},

@@ -180,12 +180,10 @@ static bool send_frame(Server *server) {
     return ok;
 }
 
-static bool send_present(Server *server, const CwPresentationState *presentation,
-                         bool already_recorded) {
+static bool send_present(Server *server, const CwPresentationState *presentation) {
     uint8_t payload[56] = {0};
 
-    if (!already_recorded &&
-        !cw_fake_server_record_presentation(&server->session, presentation)) {
+    if (!cw_fake_server_record_presentation(&server->session, presentation)) {
         return false;
     }
     cw_store_u64_le(payload, server->session.window_id);
@@ -221,18 +219,14 @@ static bool send_present(Server *server, const CwPresentationState *presentation
 /*
  * Preserve presentation ACK ordering on TCP.  Drag motions can arrive faster
  * than HWND presentation/ACK, so only one PRESENT may be in flight.  Linux
- * still computes and records every canonical state for input-sequence lookup;
- * while waiting, the unsent states are coalesced to the newest one.
+ * still computes every canonical state; while waiting, unsent states are
+ * coalesced to the newest one.  History is deliberately populated only when
+ * a PRESENT is transmitted, because only those states can produce input.
  */
 static bool send_or_defer_present(
     Server *server,
-    const CwPresentationState *presentation,
-    bool already_recorded) {
+    const CwPresentationState *presentation) {
     if (server->awaiting_present_ack) {
-        if (!already_recorded &&
-            !cw_fake_server_record_presentation(&server->session, presentation)) {
-            return false;
-        }
         server->deferred_presentation = *presentation;
         server->deferred_presentation_pending = true;
         if (server->options.trace_present) {
@@ -241,7 +235,7 @@ static bool send_or_defer_present(
         }
         return true;
     }
-    return send_present(server, presentation, already_recorded);
+    return send_present(server, presentation);
 }
 
 static bool send_destroy(Server *server) {
@@ -262,13 +256,13 @@ static bool start_after_hello(Server *server) {
         return false;
     }
     if (server->options.script_stage2) {
-        return send_present(server, &scripted_presentations[0], false);
+        return send_present(server, &scripted_presentations[0]);
     }
     server->session.next_presentation_sequence = 42U;
     if (!cw_fake_server_recompute_presentation(&server->session, &initial)) {
         return false;
     }
-    return send_present(server, &initial, true);
+    return send_present(server, &initial);
 }
 
 static bool handle_present_ack(Server *server, const uint8_t *payload, uint32_t length) {
@@ -288,7 +282,7 @@ static bool handle_present_ack(Server *server, const uint8_t *payload, uint32_t 
         CwPresentationState deferred = server->deferred_presentation;
 
         server->deferred_presentation_pending = false;
-        return send_present(server, &deferred, true);
+        return send_present(server, &deferred);
     }
     if (!server->options.script_stage2) {
         return true;
@@ -298,7 +292,7 @@ static bool handle_present_ack(Server *server, const uint8_t *payload, uint32_t 
         printf("[script] Stage 2 presentation sequence acknowledged; sending destroy\n");
         return send_destroy(server);
     }
-    return send_present(server, &scripted_presentations[server->script_step], false);
+    return send_present(server, &scripted_presentations[server->script_step]);
 }
 
 static void trace_input_result(
@@ -354,7 +348,7 @@ static bool handle_pointer_motion(Server *server, const uint8_t *payload, uint32
             printf("[grab move] window=(%" PRId32 ",%" PRId32 ")\n",
                    server->session.window_global.x, server->session.window_global.y);
         }
-        return send_or_defer_present(server, &result.generated_presentation, true);
+        return send_or_defer_present(server, &result.generated_presentation);
     }
     return true;
 }

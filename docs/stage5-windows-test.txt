@@ -1,0 +1,90 @@
+Stage 5：Windows 显示联调
+=========================
+
+目标
+----
+
+验证一个真实的 `xdg_toplevel + wl_shm` 窗口，能从 Linux Weston 经过现有
+CWNP 协议到达 Windows 代理窗口。本次只验证 Stage 5 的窗口显示；不要在
+这里测试 Stage 6 拖动。
+
+1. 在 Linux 编译 Weston（首次或源码变化后执行）
+-------------------------------------------------
+
+    ninja -C weston/build-stage4 \
+      frontend/weston desktop-shell/desktop-shell.so \
+      libweston/backend-wayland/wayland-backend.so \
+      crosswin/crosswin-stage4.so clients/weston-simple-shm
+
+2. 在 Linux 启动 Weston 导出端
+-------------------------------
+
+在图形 Wayland 会话中打开一个新终端。模块映射必须指向当前构建目录；以下
+命令直接使用仓库内已有的构建产物。
+
+    export CWROOT=/home/inkbottle/othersrc/LWforWindowsOS
+    export WESTON_MODULE_MAP="crosswin-stage4.so=$CWROOT/weston/build-stage4/crosswin/crosswin-stage4.so;wayland-backend.so=$CWROOT/weston/build-stage4/libweston/backend-wayland/wayland-backend.so;desktop-shell.so=$CWROOT/weston/build-stage4/desktop-shell/desktop-shell.so;weston-desktop-shell=$CWROOT/weston/build-stage4/clients/weston-desktop-shell;weston-keyboard=$CWROOT/weston/build-stage4/clients/weston-keyboard"
+    "$CWROOT/weston/build-stage4/frontend/weston" \
+      --socket=crosswin-stage5 \
+      --backend=wayland-backend.so \
+      --modules=crosswin-stage4.so \
+      --use-pixman --no-config \
+      --crosswin-export --crosswin-port=44600 \
+      --crosswin-trace-protocol --crosswin-trace-present
+
+Linux 预期启动日志：
+
+    crosswin-stage4: remote output 'crosswin-remote' enabled global=[1920,0 1920x1080]
+    crosswin-stage5: listening on 0.0.0.0:44600
+
+若虚机无法访问 Linux 主机的这个端口，请改用可访问的端口或配置防火墙/NAT
+转发。不要在同一端口启动 `fake-server`：Stage 5 中 Weston 本身就是 CWNP
+监听端。
+
+3. 在 Windows 启动现有代理程序
+-------------------------------
+
+在 Windows 命令提示符中，填写虚机可以访问的 Linux 主机 IP（下面的示例按
+实际网络情况替换）：
+
+    build\crosswin-agent.exe --host 192.168.122.1 --port 44600 ^
+      --trace-protocol --trace-present
+
+Windows 预期第一条协议日志：
+
+    [protocol rx] type=HELLO_ACK wire_seq=1 payload=8
+
+同时，Linux 必须输出 `crosswin-stage5: Windows client connected` 与
+`tx HELLO_ACK bytes=8`。
+
+4. 在 Linux 启动真实 Wayland 客户端
+----------------------------------
+
+在另一个 Linux 终端中执行。该终端必须保留与 Weston 相同的
+`XDG_RUNTIME_DIR`：
+
+    export WAYLAND_DISPLAY=crosswin-stage5
+    "$CWROOT/weston/build-stage4/clients/weston-simple-shm"
+
+Linux 通过条件：
+
+    crosswin-stage5: tx WINDOW_CREATE bytes=16
+    crosswin-stage5: tx WINDOW_FRAME bytes=...
+    crosswin-stage5: tx WINDOW_PRESENT bytes=56
+
+Windows 通过条件：
+
+    [protocol rx] type=WINDOW_CREATE ...
+    [protocol rx] type=WINDOW_FRAME ...
+    [protocol rx] type=WINDOW_PRESENT ...
+    [present apply] ... visible=1
+
+Windows 代理窗口必须显示 `weston-simple-shm` 的图案。关闭 Linux client 后，
+Windows 必须收到 `WINDOW_DESTROY`，代理窗口也应关闭。
+
+若失败，请收集以下日志
+----------------------
+
+* Linux Weston 从启动到 client 退出的完整 stdout/stderr；
+* Windows agent 的完整 stdout；
+* 虚机实际访问 Linux 的 IP，以及是否存在防火墙或 NAT 转发规则。

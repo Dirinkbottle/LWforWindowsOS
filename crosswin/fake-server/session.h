@@ -68,7 +68,11 @@ bool cw_fake_server_lookup_presentation(
     uint64_t presentation_sequence,
     CwPresentationState *out);
 
-/* Recomputes presentation from canonical Linux global geometry via Stage 1. */
+/*
+ * Recomputes a new presentation from canonical Linux global geometry via
+ * Stage 1.  It reserves a sequence but does not add it to history: only a
+ * presentation actually transmitted to Windows may be referenced by input.
+ */
 bool cw_fake_server_recompute_presentation(
     CwFakeServerSession *session,
     CwPresentationState *out);

@@ -1,0 +1,49 @@
+Stage 5 design: restricted real toplevel exporter
+=================================================
+
+The Stage 5 exporter is driven only by desktop-shell callbacks, never by a
+global scan of raw weston_surface objects.  The callback route is:
+
+    libweston-desktop -> desktop-shell -> crosswin_desktop_observer_v1
+
+The observer ABI is `weston/crosswin/crosswin-desktop-observer.h`.  It is
+registered by `crosswin-stage4.so` and invoked by desktop-shell only after a
+desktop surface has a shell view.  This gives the exporter a stable toplevel
+lifetime and view, including independent commits after the initial mapping.
+
+Supported surface contract
+--------------------------
+
+* xdg_toplevel only (role is exactly `xdg_toplevel`)
+* no parent, subsurface tree, transform, viewport, or scaling
+* `wl_shm` primary buffer only, ARGB/XRGB 32-bit data copied into exporter
+  owned BGRA staging memory while surrounded by wl_shm begin/end access
+* logical scale is exactly 1
+
+Every other surface is rejected with an explicit reason; it is never silently
+reinterpreted or composited.
+
+Transport and presentation contract
+-----------------------------------
+
+The exporter will be the existing CWNP TCP listener used by the fake server:
+Windows connects, sends HELLO, and receives HELLO_ACK followed by
+WINDOW_CREATE, WINDOW_FRAME, WINDOW_PRESENT and WINDOW_DESTROY.  No new wire
+format is introduced.  TCP writes are queued in the compositor event loop;
+the Wayland commit path must not block on a Windows receiver.
+
+For a committed supported buffer, the exporter obtains the canonical global
+window rectangle from the desktop-shell view and intersects it with the real
+`crosswin-remote` Weston output using Geometry Oracle
+`window_region_on_output()`.  It sends the resulting source and destination
+rectangles unchanged.  A geometry-only desktop-shell movement therefore emits
+a new PRESENT even if no buffer contents changed.
+
+Validation gate
+---------------
+
+The required real-client test is an 800x600 scale-1 `xdg_toplevel` using
+`wl_shm`, a visible color/pattern change, and a 32px top drag strip.  Windows
+must show it at the canonical geometry and receive a new PRESENT for geometry
+changes independent of client commits.  Only then may Stage 6 add the actual
+`xdg_toplevel.move` path.

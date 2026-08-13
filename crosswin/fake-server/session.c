@@ -118,7 +118,8 @@ bool cw_fake_server_recompute_presentation(
     if (out != NULL) {
         *out = (CwPresentationState){0, {0, 0, 0, 0}, {0, 0, 0, 0}, false};
     }
-    if (session == NULL || out == NULL || session->next_presentation_sequence == 0U) {
+    if (session == NULL || out == NULL || session->next_presentation_sequence == 0U ||
+        session->next_presentation_sequence == UINT64_MAX) {
         return false;
     }
     presentation = (CwPresentationState){
@@ -127,15 +128,13 @@ bool cw_fake_server_recompute_presentation(
         {0, 0, 0, 0},
         false,
     };
+    ++session->next_presentation_sequence;
     if (window_region_on_output(session->window_global, session->remote_output_global,
                                 &global_intersection, &source, &destination)) {
         (void)global_intersection;
         presentation.source_rect = source;
         presentation.destination_rect = destination;
         presentation.visible = true;
-    }
-    if (!cw_fake_server_record_presentation(session, &presentation)) {
-        return false;
     }
     *out = presentation;
     return true;
@@ -202,6 +201,10 @@ static bool update_fake_grab(
     next_y = (int64_t)session->grab_initial_window.y + delta_y;
     if (!fits_i32(next_x) || !fits_i32(next_y)) {
         return false;
+    }
+    if (session->window_global.x == (int32_t)next_x &&
+        session->window_global.y == (int32_t)next_y) {
+        return true;
     }
     session->window_global.x = (int32_t)next_x;
     session->window_global.y = (int32_t)next_y;
