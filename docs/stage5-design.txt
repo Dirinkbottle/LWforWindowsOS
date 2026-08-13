@@ -39,6 +39,13 @@ window rectangle from the desktop-shell view and intersects it with the real
 rectangles unchanged.  A geometry-only desktop-shell movement therefore emits
 a new PRESENT even if no buffer contents changed.
 
+When `--crosswin-export` is active, a newly supported toplevel is initially
+placed at remote-output origin plus `(80,80)` before its first PRESENT. This
+is a Stage 5 placement policy, not a Windows-side move; the canonical view
+position remains owned by Weston. A nested Linux preview may no longer show
+the toplevel after this placement, because it now belongs to the renderless
+remote output.
+
 Validation gate
 ---------------
 

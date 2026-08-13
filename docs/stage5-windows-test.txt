@@ -14,7 +14,7 @@ CWNP 协议到达 Windows 代理窗口。本次只验证 Stage 5 的窗口显示
     ninja -C weston/build-stage4 \
       frontend/weston desktop-shell/desktop-shell.so \
       libweston/backend-wayland/wayland-backend.so \
-      crosswin/crosswin-stage4.so clients/weston-simple-shm
+      crosswin/crosswin-stage4.so crosswin/crosswin-stage5-client
 
 2. 在 Linux 启动 Weston 导出端
 -------------------------------
@@ -57,20 +57,26 @@ Windows 预期第一条协议日志：
 同时，Linux 必须输出 `crosswin-stage5: Windows client connected` 与
 `tx HELLO_ACK bytes=8`。
 
-4. 在 Linux 启动真实 Wayland 客户端
+4. 在 Linux 启动固定契约的真实 Wayland 客户端
 ----------------------------------
 
 在另一个 Linux 终端中执行。该终端必须保留与 Weston 相同的
 `XDG_RUNTIME_DIR`：
 
     export WAYLAND_DISPLAY=crosswin-stage5
-    "$CWROOT/weston/build-stage4/clients/weston-simple-shm"
+    "$CWROOT/weston/build-stage4/crosswin/crosswin-stage5-client"
+
+这个 client 固定创建一个 800x600、scale=1、XRGB8888 `wl_shm`
+`xdg_toplevel`：顶部 32px 是橙色拖动条，下面是四块不同颜色的区域和白色
+对角线。它存活约 2 秒后自动退出，因此无需手动关闭。
 
 Linux 通过条件：
 
     crosswin-stage5: tx WINDOW_CREATE bytes=16
-    crosswin-stage5: tx WINDOW_FRAME bytes=...
+    crosswin-stage5: placed window 1 at remote global=[2000,80]
+    crosswin-stage5: tx WINDOW_FRAME bytes=1920024
     crosswin-stage5: tx WINDOW_PRESENT bytes=56
+    crosswin-stage5: present ... src=[0,0 800x600] dst=[80,80 800x600] visible=1
 
 Windows 通过条件：
 
@@ -79,8 +85,12 @@ Windows 通过条件：
     [protocol rx] type=WINDOW_PRESENT ...
     [present apply] ... visible=1
 
-Windows 代理窗口必须显示 `weston-simple-shm` 的图案。关闭 Linux client 后，
-Windows 必须收到 `WINDOW_DESTROY`，代理窗口也应关闭。
+Windows 代理窗口必须显示上述橙色标题条、四色区域和白色对角线。client 自动
+退出后，Windows 必须收到 `WINDOW_DESTROY`，代理窗口也应关闭。
+
+说明：`--crosswin-export` 会把新建的受支持窗口初始放置到
+`crosswin-remote`，所以本测试 client 在嵌套 Linux 预览窗口中可能会在出现后
+消失；这是正常现象，图案应出现在 Windows 代理窗口中。
 
 若失败，请收集以下日志
 ----------------------
