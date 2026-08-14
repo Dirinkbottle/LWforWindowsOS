@@ -29,17 +29,21 @@ ProxyWindow::ProxyWindow()
       surface_width_(0U),
       surface_height_(0U),
       stride_(0U),
+      frame_sequence_(0U),
       framebuffer_{},
       presentation_{},
       pressed_button_mask_(0U),
       tracking_mouse_(false),
-      trace_input_(false) {}
+      trace_input_(false),
+      trace_frame_(false),
+      trace_damage_(false) {}
 
 ProxyWindow::~ProxyWindow() {
     destroy();
 }
 
-bool ProxyWindow::create(HINSTANCE instance, AgentProtocol *protocol, bool trace_input) {
+bool ProxyWindow::create(HINSTANCE instance, AgentProtocol *protocol, bool trace_input,
+                         bool trace_frame, bool trace_damage) {
     WNDCLASSW window_class{};
 
     if (protocol == nullptr || hwnd_ != nullptr) {
@@ -54,6 +58,8 @@ bool ProxyWindow::create(HINSTANCE instance, AgentProtocol *protocol, bool trace
     }
     protocol_ = protocol;
     trace_input_ = trace_input;
+    trace_frame_ = trace_frame;
+    trace_damage_ = trace_damage;
     hwnd_ = CreateWindowExW(WS_EX_TOOLWINDOW, kProxyClassName, L"",
                             WS_POPUP, 0, 0, 1, 1, nullptr, nullptr, instance, this);
     return hwnd_ != nullptr;
@@ -66,6 +72,7 @@ void ProxyWindow::destroy() {
     }
     framebuffer_.clear();
     window_id_ = 0U;
+    frame_sequence_ = 0U;
     pressed_button_mask_ = 0U;
     tracking_mouse_ = false;
 }
@@ -86,6 +93,7 @@ bool ProxyWindow::apply_create(const CwWindowCreate &create) {
     const std::uint64_t stride = static_cast<std::uint64_t>(create.surface_width) * 4U;
     const std::uint64_t bytes = stride * create.surface_height;
     if (stride > std::numeric_limits<std::uint32_t>::max() ||
+        bytes > CW_MAX_PAYLOAD - 32U ||
         bytes > std::numeric_limits<std::size_t>::max()) {
         return false;
     }
@@ -94,6 +102,38 @@ bool ProxyWindow::apply_create(const CwWindowCreate &create) {
     surface_height_ = create.surface_height;
     stride_ = static_cast<std::uint32_t>(stride);
     framebuffer_.assign(static_cast<std::size_t>(bytes), 0U);
+    frame_sequence_ = 0U;
+    return true;
+}
+
+bool ProxyWindow::apply_resize(const CwWindowResize &resize) {
+    CwWindowCreate create{};
+
+    if (!owns_window(resize.window_id)) {
+        return false;
+    }
+    create.window_id = resize.window_id;
+    create.surface_width = resize.surface_width;
+    create.surface_height = resize.surface_height;
+    /* Reallocation has the same overflow rules as CREATE, but does not create
+     * a new HWND or change any Linux-owned presentation geometry. */
+    const std::uint64_t stride = static_cast<std::uint64_t>(create.surface_width) * 4U;
+    const std::uint64_t bytes = stride * create.surface_height;
+    if (create.surface_width == 0U || create.surface_height == 0U ||
+        stride > std::numeric_limits<std::uint32_t>::max() ||
+        bytes > CW_MAX_PAYLOAD - 32U ||
+        bytes > std::numeric_limits<std::size_t>::max()) {
+        return false;
+    }
+    surface_width_ = create.surface_width;
+    surface_height_ = create.surface_height;
+    stride_ = static_cast<std::uint32_t>(stride);
+    framebuffer_.assign(static_cast<std::size_t>(bytes), 0U);
+    frame_sequence_ = 0U;
+    if (trace_frame_) {
+        std::printf("[frame resize] win=%llu size=%ux%u\n",
+                    static_cast<unsigned long long>(window_id_), surface_width_, surface_height_);
+    }
     return true;
 }
 
@@ -101,11 +141,92 @@ bool ProxyWindow::apply_frame(const CwWindowFrame &frame) {
     if (!owns_window(frame.window_id) || frame.width != surface_width_ ||
         frame.height != surface_height_ || frame.stride != stride_ ||
         frame.pixel_format != CW_PIXEL_FORMAT_BGRA8888 ||
-        frame.pixel_bytes != framebuffer_.size()) {
+        frame.pixel_bytes != framebuffer_.size() || frame.frame_sequence == 0U) {
         return false;
     }
+    if (frame.frame_sequence < frame_sequence_) {
+        if (trace_frame_) {
+            std::printf("[frame stale] win=%llu frame=%llu local=%llu\n",
+                        static_cast<unsigned long long>(window_id_),
+                        static_cast<unsigned long long>(frame.frame_sequence),
+                        static_cast<unsigned long long>(frame_sequence_));
+        }
+        return true;
+    }
     std::memcpy(framebuffer_.data(), frame.pixels, framebuffer_.size());
+    frame_sequence_ = frame.frame_sequence;
+    if (trace_frame_) {
+        std::printf("[frame apply] win=%llu frame=%llu full=1 bytes=%llu\n",
+                    static_cast<unsigned long long>(window_id_),
+                    static_cast<unsigned long long>(frame_sequence_),
+                    static_cast<unsigned long long>(frame.pixel_bytes));
+    }
     InvalidateRect(hwnd_, nullptr, FALSE);
+    return true;
+}
+
+bool ProxyWindow::request_frame_resync(const char *reason) {
+    if (trace_damage_) {
+        std::printf("[damage desync] win=%llu local_frame=%llu reason=%s\n",
+                    static_cast<unsigned long long>(window_id_),
+                    static_cast<unsigned long long>(frame_sequence_), reason);
+    }
+    return protocol_ != nullptr && protocol_->send_frame_request(window_id_, frame_sequence_);
+}
+
+bool ProxyWindow::apply_damage(const CwWindowDamage &damage) {
+    std::vector<CwDamageRect> rectangles;
+    std::uint32_t index;
+
+    if (!owns_window(damage.window_id)) {
+        return false;
+    }
+    if (frame_sequence_ == 0U || damage.base_frame_sequence != frame_sequence_ ||
+        damage.frame_sequence <= damage.base_frame_sequence) {
+        return request_frame_resync("base-frame-mismatch");
+    }
+    rectangles.reserve(damage.rect_count);
+    for (index = 0U; index < damage.rect_count; ++index) {
+        CwDamageRect rectangle{};
+        std::int64_t right;
+        std::int64_t bottom;
+
+        if (!cw_window_damage_rect_at(&damage, index, &rectangle)) {
+            return request_frame_resync("malformed-rectangle");
+        }
+        right = static_cast<std::int64_t>(rectangle.x) + rectangle.width;
+        bottom = static_cast<std::int64_t>(rectangle.y) + rectangle.height;
+        if (rectangle.x < 0 || rectangle.y < 0 || right > surface_width_ ||
+            bottom > surface_height_ || rectangle.stride != rectangle.width * 4U ||
+            rectangle.pixel_bytes != static_cast<std::uint64_t>(rectangle.stride) * rectangle.height) {
+            return request_frame_resync("rectangle-outside-surface");
+        }
+        rectangles.push_back(rectangle);
+    }
+    /* Validate every rect before altering the persistent framebuffer.  The
+     * message is therefore atomic even for overlapping rectangles. */
+    for (const CwDamageRect &rectangle : rectangles) {
+        for (std::uint32_t row = 0U; row < rectangle.height; ++row) {
+            const std::size_t destination =
+                (static_cast<std::size_t>(rectangle.y) + row) * stride_ +
+                static_cast<std::size_t>(rectangle.x) * 4U;
+            const std::size_t source = static_cast<std::size_t>(row) * rectangle.stride;
+
+            std::memcpy(framebuffer_.data() + destination, rectangle.pixels + source,
+                        rectangle.stride);
+        }
+    }
+    frame_sequence_ = damage.frame_sequence;
+    if (trace_damage_) {
+        std::printf("[damage apply] win=%llu frame=%llu base=%llu rects=%u\n",
+                    static_cast<unsigned long long>(window_id_),
+                    static_cast<unsigned long long>(damage.frame_sequence),
+                    static_cast<unsigned long long>(damage.base_frame_sequence),
+                    damage.rect_count);
+    }
+    if (!rectangles.empty()) {
+        InvalidateRect(hwnd_, nullptr, FALSE);
+    }
     return true;
 }
 
@@ -143,6 +264,7 @@ bool ProxyWindow::apply_destroy(std::uint64_t window_id) {
     surface_width_ = 0U;
     surface_height_ = 0U;
     stride_ = 0U;
+    frame_sequence_ = 0U;
     presentation_ = CwWindowPresent{};
     DestroyWindow(hwnd_);
     hwnd_ = nullptr;

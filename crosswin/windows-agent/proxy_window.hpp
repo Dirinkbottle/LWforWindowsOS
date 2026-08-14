@@ -17,13 +17,16 @@ public:
     ProxyWindow(const ProxyWindow &) = delete;
     ProxyWindow &operator=(const ProxyWindow &) = delete;
 
-    bool create(HINSTANCE instance, AgentProtocol *protocol, bool trace_input);
+    bool create(HINSTANCE instance, AgentProtocol *protocol, bool trace_input,
+                bool trace_frame, bool trace_damage);
     void destroy();
     HWND hwnd() const;
     bool owns_window(std::uint64_t window_id) const;
 
     bool apply_create(const CwWindowCreate &create);
+    bool apply_resize(const CwWindowResize &resize);
     bool apply_frame(const CwWindowFrame &frame);
+    bool apply_damage(const CwWindowDamage &damage);
     bool apply_present(const CwWindowPresent &present);
     bool apply_destroy(std::uint64_t window_id);
 
@@ -36,6 +39,7 @@ private:
     void trace_location(const char *event, const CwPointerLocation &location) const;
     void send_button(UINT message, WPARAM wparam, LPARAM lparam);
     void send_wheel(WPARAM wparam, LPARAM lparam);
+    bool request_frame_resync(const char *reason);
     void paint(HDC dc);
 
     HWND hwnd_;
@@ -44,11 +48,14 @@ private:
     std::uint32_t surface_width_;
     std::uint32_t surface_height_;
     std::uint32_t stride_;
+    std::uint64_t frame_sequence_;
     std::vector<std::uint8_t> framebuffer_;
     CwWindowPresent presentation_;
     std::uint32_t pressed_button_mask_;
     bool tracking_mouse_;
     bool trace_input_;
+    bool trace_frame_;
+    bool trace_damage_;
 };
 
 #endif

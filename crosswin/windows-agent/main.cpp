@@ -17,13 +17,16 @@ struct AgentOptions {
     bool trace_protocol = false;
     bool trace_present = false;
     bool trace_input = false;
+    bool trace_frame = false;
+    bool trace_damage = false;
 };
 
 class AgentApplication {
 public:
     bool initialize(HINSTANCE instance, const AgentOptions &options) {
         options_ = options;
-        if (!proxy_.create(instance, &protocol_, options.trace_input)) {
+        if (!proxy_.create(instance, &protocol_, options.trace_input,
+                           options.trace_frame, options.trace_damage)) {
             std::fprintf(stderr, "[init] CreateWindowExW/RegisterClassW failed: Win32 error=%lu\n",
                          static_cast<unsigned long>(GetLastError()));
             return false;
@@ -86,6 +89,16 @@ private:
             return cw_decode_window_frame(payload, header.payload_length, &frame) &&
                    proxy_.apply_frame(frame);
         }
+        case CW_MESSAGE_WINDOW_DAMAGE: {
+            CwWindowDamage damage{};
+            return cw_decode_window_damage(payload, header.payload_length, &damage) &&
+                   proxy_.apply_damage(damage);
+        }
+        case CW_MESSAGE_WINDOW_RESIZE: {
+            CwWindowResize resize{};
+            return cw_decode_window_resize(payload, header.payload_length, &resize) &&
+                   proxy_.apply_resize(resize);
+        }
         case CW_MESSAGE_WINDOW_PRESENT: {
             CwWindowPresent present{};
             if (!cw_decode_window_present(payload, header.payload_length, &present)) {
@@ -147,6 +160,10 @@ bool parse_options(int argc, char **argv, AgentOptions *options) {
             options->trace_present = true;
         } else if (std::strcmp(argv[index], "--trace-input") == 0) {
             options->trace_input = true;
+        } else if (std::strcmp(argv[index], "--trace-frame") == 0) {
+            options->trace_frame = true;
+        } else if (std::strcmp(argv[index], "--trace-damage") == 0) {
+            options->trace_damage = true;
         } else {
             return false;
         }
@@ -157,7 +174,7 @@ bool parse_options(int argc, char **argv, AgentOptions *options) {
 void print_usage(const char *program) {
     std::fprintf(stderr,
                  "usage: %s --host <linux-ip> [--port 44600] [--trace-protocol] "
-                 "[--trace-present] [--trace-input]\n",
+                 "[--trace-present] [--trace-input] [--trace-frame] [--trace-damage]\n",
                  program);
 }
 

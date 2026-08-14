@@ -66,7 +66,7 @@ echo Output: %CD%\build\crosswin-agent.exe
 echo ============================================================
 echo.
 echo Example:
-echo   build\crosswin-agent.exe --host 192.168.122.1 --port 44600 --trace-protocol --trace-present --trace-input
+echo   build\crosswin-agent.exe --host 192.168.122.1 --port 44600 --trace-protocol --trace-present --trace-input --trace-frame --trace-damage
 goto :done
 
 :pushd_failed

@@ -8,7 +8,7 @@ BINDIR = build
 
 .PHONY: all test integration input-integration sanitize clean
 
-all: $(BINDIR)/fake-server $(BINDIR)/protocol_test $(BINDIR)/session_test $(BINDIR)/scripted-agent $(BINDIR)/input-agent $(BINDIR)/stage5-agent $(BINDIR)/stage6-agent
+all: $(BINDIR)/fake-server $(BINDIR)/protocol_test $(BINDIR)/session_test $(BINDIR)/scripted-agent $(BINDIR)/input-agent $(BINDIR)/stage5-agent $(BINDIR)/stage6-agent $(BINDIR)/stage7a-agent
 
 $(BINDIR):
 	mkdir -p $@
@@ -32,6 +32,9 @@ $(BINDIR)/stage5-agent: $(COMMON) tests/stage5_agent.c | $(BINDIR)
 	$(CC) $(CFLAGS) $^ -o $@
 
 $(BINDIR)/stage6-agent: $(COMMON) tests/stage6_agent.c | $(BINDIR)
+	$(CC) $(CFLAGS) $^ -o $@
+
+$(BINDIR)/stage7a-agent: $(COMMON) tests/stage7a_agent.c | $(BINDIR)
 	$(CC) $(CFLAGS) $^ -o $@
 
 test: $(BINDIR)/protocol_test $(BINDIR)/session_test

@@ -2,7 +2,7 @@
 #define CROSSWIN_PROTOCOL_H
 
 /*
- * CrossWin Network Protocol (CWNP), version 1.
+ * CrossWin Network Protocol (CWNP), version 2.
  *
  * Every integer is serialized explicitly in little-endian byte order.  No
  * native C/C++ struct is ever used as a wire message.  TCP is a byte stream:
@@ -19,12 +19,13 @@ extern "C" {
 
 enum {
     CW_PROTOCOL_MAGIC = 0x504E5743U, /* Wire bytes: 'C', 'W', 'N', 'P'. */
-    CW_PROTOCOL_VERSION = 1U,
+    CW_PROTOCOL_VERSION = 2U,
     CW_HEADER_SIZE = 24U,
     CW_MAX_PAYLOAD = 64U * 1024U * 1024U,
     CW_PIXEL_FORMAT_BGRA8888 = 1U,
     CW_PIXEL_FORMAT_MASK_BGRA8888 = 1U << 0,
     CW_MAX_SURFACE_DIMENSION = 16384U,
+    CW_MAX_DAMAGE_RECTS = 256U,
     CW_OPTIONAL_MESSAGE_BIT = 0x8000U,
 };
 
@@ -36,6 +37,9 @@ typedef enum {
     CW_MESSAGE_WINDOW_PRESENT = 12,
     CW_MESSAGE_WINDOW_PRESENT_ACK = 13,
     CW_MESSAGE_WINDOW_DESTROY = 14,
+    CW_MESSAGE_WINDOW_DAMAGE = 15,
+    CW_MESSAGE_WINDOW_FRAME_REQUEST = 16,
+    CW_MESSAGE_WINDOW_RESIZE = 17,
     CW_MESSAGE_POINTER_ENTER = 30,
     CW_MESSAGE_POINTER_LEAVE = 31,
     CW_MESSAGE_POINTER_MOTION = 32,
@@ -83,6 +87,7 @@ typedef struct {
 
 typedef struct {
     uint64_t window_id;
+    uint64_t frame_sequence;
     uint32_t width;
     uint32_t height;
     uint32_t stride;
@@ -90,6 +95,41 @@ typedef struct {
     const uint8_t *pixels;
     uint64_t pixel_bytes;
 } CwWindowFrame;
+
+/*
+ * WINDOW_DAMAGE is one atomic content update.  Each rectangle is encoded as
+ * { i32 x, i32 y, u32 width, u32 height, tightly-packed BGRA8888 pixels }.
+ * There is deliberately no per-rectangle stride: every row is width * 4.
+ */
+typedef struct {
+    int32_t x;
+    int32_t y;
+    uint32_t width;
+    uint32_t height;
+    uint32_t stride;
+    const uint8_t *pixels;
+    uint64_t pixel_bytes;
+} CwDamageRect;
+
+typedef struct {
+    uint64_t window_id;
+    uint64_t frame_sequence;
+    uint64_t base_frame_sequence;
+    uint32_t rect_count;
+    const uint8_t *rect_data;
+    uint32_t rect_data_length;
+} CwWindowDamage;
+
+typedef struct {
+    uint64_t window_id;
+    uint64_t local_frame_sequence;
+} CwWindowFrameRequest;
+
+typedef struct {
+    uint64_t window_id;
+    uint32_t surface_width;
+    uint32_t surface_height;
+} CwWindowResize;
 
 /* All presentation rectangles are surface-local or output-local logical px. */
 typedef struct {
@@ -221,6 +261,13 @@ bool cw_decode_hello(const uint8_t *payload, uint32_t length, CwHello *out);
 bool cw_decode_hello_ack(const uint8_t *payload, uint32_t length, CwHelloAck *out);
 bool cw_decode_window_create(const uint8_t *payload, uint32_t length, CwWindowCreate *out);
 bool cw_decode_window_frame(const uint8_t *payload, uint32_t length, CwWindowFrame *out);
+bool cw_decode_window_damage(const uint8_t *payload, uint32_t length, CwWindowDamage *out);
+bool cw_window_damage_rect_at(const CwWindowDamage *damage, uint32_t index,
+                              CwDamageRect *out);
+bool cw_decode_window_frame_request(const uint8_t *payload, uint32_t length,
+                                    CwWindowFrameRequest *out);
+bool cw_decode_window_resize(const uint8_t *payload, uint32_t length,
+                             CwWindowResize *out);
 bool cw_decode_window_present(const uint8_t *payload, uint32_t length, CwWindowPresent *out);
 bool cw_decode_window_present_ack(
     const uint8_t *payload, uint32_t length, CwWindowPresentAck *out);

@@ -53,16 +53,17 @@ static void encode_hello(CwBuffer *out, uint64_t sequence) {
 }
 
 static void encode_test_frame(CwBuffer *out, uint64_t sequence) {
-    uint8_t payload[96]; /* Prefix 24 + 3 * 6 * 4 BGRA bytes = 96. */
+    uint8_t payload[104]; /* Prefix 32 + 3 * 6 * 4 BGRA bytes = 104. */
     unsigned index;
 
     memset(payload, 0, sizeof(payload));
     cw_store_u64_le(payload, 1U);
-    cw_store_u32_le(payload + 8U, 3U);
-    cw_store_u32_le(payload + 12U, 6U);
-    cw_store_u32_le(payload + 16U, 12U);
-    cw_store_u32_le(payload + 20U, CW_PIXEL_FORMAT_BGRA8888);
-    for (index = 24U; index < sizeof(payload); ++index) {
+    cw_store_u64_le(payload + 8U, 7U);
+    cw_store_u32_le(payload + 16U, 3U);
+    cw_store_u32_le(payload + 20U, 6U);
+    cw_store_u32_le(payload + 24U, 12U);
+    cw_store_u32_le(payload + 28U, CW_PIXEL_FORMAT_BGRA8888);
+    for (index = 32U; index < sizeof(payload); ++index) {
         payload[index] = (uint8_t)index;
     }
     if (!cw_message_encode(out, CW_MESSAGE_WINDOW_FRAME, 0U, sequence,
@@ -133,18 +134,18 @@ static void test_tcp_fragmentation(void) {
 
     cw_buffer_init(&frame);
     encode_test_frame(&frame, 42U);
-    CHECK(frame.length == 120U);
+    CHECK(frame.length == 128U);
 
     seen = (SeenMessages){0};
     fragments[0] = 1U;
-    fragments[1] = 119U;
+    fragments[1] = 127U;
     feed_fragmented(frame.data, frame.length, fragments, 2U, &seen);
     CHECK(seen.count == 1U && seen.sequences[0] == 42U);
 
     seen = (SeenMessages){0};
     fragments[0] = 23U;
     fragments[1] = 1U;
-    fragments[2] = 96U;
+    fragments[2] = 104U;
     feed_fragmented(frame.data, frame.length, fragments, 3U, &seen);
     CHECK(seen.count == 1U && seen.types[0] == CW_MESSAGE_WINDOW_FRAME);
 
@@ -235,13 +236,13 @@ static void expect_decode_error(
 
 static void test_invalid_messages(void) {
     uint8_t header[CW_HEADER_SIZE];
-    uint8_t frame[CW_HEADER_SIZE + 39U];
+    uint8_t frame[CW_HEADER_SIZE + 48U];
     CwDecoder decoder;
     SeenMessages seen = {0};
 
     store_raw_header(header, 0U, CW_PROTOCOL_VERSION, CW_MESSAGE_HELLO, 8U);
     expect_decode_error(header, sizeof(header), CW_DECODER_BAD_MAGIC);
-    store_raw_header(header, CW_PROTOCOL_MAGIC, 2U, CW_MESSAGE_HELLO, 8U);
+    store_raw_header(header, CW_PROTOCOL_MAGIC, 1U, CW_MESSAGE_HELLO, 8U);
     expect_decode_error(header, sizeof(header), CW_DECODER_UNSUPPORTED_VERSION);
     store_raw_header(header, CW_PROTOCOL_MAGIC, CW_PROTOCOL_VERSION, 99U, 0U);
     expect_decode_error(header, sizeof(header), CW_DECODER_UNKNOWN_MANDATORY_MESSAGE);
@@ -257,25 +258,91 @@ static void test_invalid_messages(void) {
     cw_decoder_destroy(&decoder);
 
     memset(frame, 0, sizeof(frame));
-    store_raw_header(frame, CW_PROTOCOL_MAGIC, CW_PROTOCOL_VERSION, CW_MESSAGE_WINDOW_FRAME, 24U);
+    store_raw_header(frame, CW_PROTOCOL_MAGIC, CW_PROTOCOL_VERSION, CW_MESSAGE_WINDOW_FRAME, 32U);
     cw_store_u64_le(frame + CW_HEADER_SIZE, 1U);
-    cw_store_u32_le(frame + CW_HEADER_SIZE + 8U, 2U);
-    cw_store_u32_le(frame + CW_HEADER_SIZE + 12U, 2U);
-    cw_store_u32_le(frame + CW_HEADER_SIZE + 16U, 7U); /* Smaller than width * 4. */
-    cw_store_u32_le(frame + CW_HEADER_SIZE + 20U, CW_PIXEL_FORMAT_BGRA8888);
+    cw_store_u64_le(frame + CW_HEADER_SIZE + 8U, 1U);
+    cw_store_u32_le(frame + CW_HEADER_SIZE + 16U, 2U);
+    cw_store_u32_le(frame + CW_HEADER_SIZE + 20U, 2U);
+    cw_store_u32_le(frame + CW_HEADER_SIZE + 24U, 7U); /* Smaller than width * 4. */
+    cw_store_u32_le(frame + CW_HEADER_SIZE + 28U, CW_PIXEL_FORMAT_BGRA8888);
     expect_decode_error(frame, sizeof(frame), CW_DECODER_INVALID_PAYLOAD);
 
-    cw_store_u32_le(frame + CW_HEADER_SIZE + 8U, UINT32_MAX);
-    cw_store_u32_le(frame + CW_HEADER_SIZE + 12U, UINT32_MAX);
     cw_store_u32_le(frame + CW_HEADER_SIZE + 16U, UINT32_MAX);
+    cw_store_u32_le(frame + CW_HEADER_SIZE + 20U, UINT32_MAX);
+    cw_store_u32_le(frame + CW_HEADER_SIZE + 24U, UINT32_MAX);
     expect_decode_error(frame, sizeof(frame), CW_DECODER_INVALID_PAYLOAD);
 
-    store_raw_header(frame, CW_PROTOCOL_MAGIC, CW_PROTOCOL_VERSION, CW_MESSAGE_WINDOW_FRAME, 39U);
-    cw_store_u32_le(frame + CW_HEADER_SIZE + 8U, 2U);
-    cw_store_u32_le(frame + CW_HEADER_SIZE + 12U, 2U);
-    cw_store_u32_le(frame + CW_HEADER_SIZE + 16U, 8U);
-    cw_store_u32_le(frame + CW_HEADER_SIZE + 20U, CW_PIXEL_FORMAT_BGRA8888);
-    expect_decode_error(frame, CW_HEADER_SIZE + 39U, CW_DECODER_INVALID_PAYLOAD);
+    store_raw_header(frame, CW_PROTOCOL_MAGIC, CW_PROTOCOL_VERSION, CW_MESSAGE_WINDOW_FRAME, 47U);
+    cw_store_u64_le(frame + CW_HEADER_SIZE + 8U, 1U);
+    cw_store_u32_le(frame + CW_HEADER_SIZE + 16U, 2U);
+    cw_store_u32_le(frame + CW_HEADER_SIZE + 20U, 2U);
+    cw_store_u32_le(frame + CW_HEADER_SIZE + 24U, 8U);
+    cw_store_u32_le(frame + CW_HEADER_SIZE + 28U, CW_PIXEL_FORMAT_BGRA8888);
+    expect_decode_error(frame, CW_HEADER_SIZE + 47U, CW_DECODER_INVALID_PAYLOAD);
+}
+
+static void test_damage_payloads(void) {
+    uint8_t malformed[64] = {0};
+    CwWindowDamage damage;
+    CwDamageRect first;
+    CwDamageRect second;
+    CwBuffer encoded;
+    CwHeader header;
+
+    cw_store_u64_le(malformed, 9U);
+    cw_store_u64_le(malformed + 8U, 12U);
+    cw_store_u64_le(malformed + 16U, 11U);
+    cw_store_u32_le(malformed + 24U, 2U);
+    cw_store_i32_le(malformed + 32U, 3);
+    cw_store_i32_le(malformed + 36U, 4);
+    cw_store_u32_le(malformed + 40U, 2U);
+    cw_store_u32_le(malformed + 44U, 1U);
+    /* The second rectangle prefix is intentionally truncated. */
+    cw_buffer_init(&encoded);
+    CHECK(!cw_message_encode(&encoded, CW_MESSAGE_WINDOW_DAMAGE, 0U, 1U,
+                             malformed, sizeof(malformed)));
+    cw_buffer_destroy(&encoded);
+
+    {
+        uint8_t valid[80] = {0};
+
+        memcpy(valid, malformed, 56U);
+        valid[48] = 1U; valid[49] = 2U; valid[50] = 3U; valid[51] = 4U;
+        valid[52] = 5U; valid[53] = 6U; valid[54] = 7U; valid[55] = 8U;
+        cw_store_i32_le(valid + 56U, -1);
+        cw_store_i32_le(valid + 60U, 7);
+        cw_store_u32_le(valid + 64U, 1U);
+        cw_store_u32_le(valid + 68U, 2U);
+        valid[72] = 9U; valid[73] = 10U; valid[74] = 11U; valid[75] = 12U;
+        valid[76] = 13U; valid[77] = 14U; valid[78] = 15U; valid[79] = 16U;
+        CHECK(cw_message_encode(&encoded, CW_MESSAGE_WINDOW_DAMAGE, 0U, 2U,
+                                valid, sizeof(valid)));
+        CHECK(cw_header_decode(encoded.data, &header));
+        CHECK(header.type == CW_MESSAGE_WINDOW_DAMAGE);
+        CHECK(cw_decode_window_damage(encoded.data + CW_HEADER_SIZE,
+                                      header.payload_length, &damage));
+        CHECK(damage.window_id == 9U && damage.frame_sequence == 12U &&
+              damage.base_frame_sequence == 11U && damage.rect_count == 2U);
+        CHECK(cw_window_damage_rect_at(&damage, 0U, &first));
+        CHECK(first.x == 3 && first.y == 4 && first.width == 2U && first.height == 1U &&
+              first.stride == 8U && first.pixel_bytes == 8U && first.pixels[7] == 8U);
+        CHECK(cw_window_damage_rect_at(&damage, 1U, &second));
+        CHECK(second.x == -1 && second.y == 7 && second.width == 1U && second.height == 2U &&
+              second.pixels[0] == 9U && second.pixels[7] == 16U);
+        CHECK(!cw_window_damage_rect_at(&damage, 2U, &second));
+        cw_buffer_destroy(&encoded);
+    }
+
+    {
+        uint8_t empty[32] = {0};
+
+        cw_store_u64_le(empty, 9U);
+        cw_store_u64_le(empty + 8U, 12U);
+        cw_store_u64_le(empty + 16U, 11U);
+        CHECK(cw_message_encode(&encoded, CW_MESSAGE_WINDOW_DAMAGE, 0U, 3U,
+                                empty, sizeof(empty)));
+        cw_buffer_destroy(&encoded);
+    }
 }
 
 static void test_pointer_payloads(void) {
@@ -319,6 +386,7 @@ int main(void) {
     test_tcp_fragmentation();
     test_coalescing_and_mixed_stream();
     test_invalid_messages();
+    test_damage_payloads();
     test_pointer_payloads();
     printf("protocol tests: PASS\n");
     printf("cases: %lu\n", cases);

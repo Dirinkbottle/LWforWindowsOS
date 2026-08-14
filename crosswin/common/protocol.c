@@ -8,7 +8,11 @@ enum {
     CW_HELLO_PAYLOAD_SIZE = 8U,
     CW_HELLO_ACK_PAYLOAD_SIZE = 8U,
     CW_WINDOW_CREATE_PAYLOAD_SIZE = 16U,
-    CW_WINDOW_FRAME_PREFIX_SIZE = 24U,
+    CW_WINDOW_FRAME_PREFIX_SIZE = 32U,
+    CW_WINDOW_DAMAGE_PREFIX_SIZE = 32U,
+    CW_WINDOW_DAMAGE_RECT_PREFIX_SIZE = 16U,
+    CW_WINDOW_FRAME_REQUEST_PAYLOAD_SIZE = 16U,
+    CW_WINDOW_RESIZE_PAYLOAD_SIZE = 16U,
     CW_WINDOW_PRESENT_PAYLOAD_SIZE = 56U,
     CW_WINDOW_PRESENT_ACK_PAYLOAD_SIZE = 16U,
     CW_WINDOW_DESTROY_PAYLOAD_SIZE = 8U,
@@ -37,6 +41,15 @@ static bool valid_surface(uint32_t width, uint32_t height) {
            height <= CW_MAX_SURFACE_DIMENSION;
 }
 
+/* Every supported Stage 7A surface must also fit into its full-frame fallback
+ * message.  This keeps CREATE/RESIZE from making the receiver allocate a
+ * framebuffer which CWNP can never resynchronize. */
+static bool valid_frame_surface(uint32_t width, uint32_t height) {
+    return valid_surface(width, height) &&
+           (uint64_t)width * (uint64_t)height * 4U <=
+               CW_MAX_PAYLOAD - CW_WINDOW_FRAME_PREFIX_SIZE;
+}
+
 bool cw_message_type_is_known(uint16_t type) {
     switch (type) {
     case CW_MESSAGE_HELLO:
@@ -46,6 +59,9 @@ bool cw_message_type_is_known(uint16_t type) {
     case CW_MESSAGE_WINDOW_PRESENT:
     case CW_MESSAGE_WINDOW_PRESENT_ACK:
     case CW_MESSAGE_WINDOW_DESTROY:
+    case CW_MESSAGE_WINDOW_DAMAGE:
+    case CW_MESSAGE_WINDOW_FRAME_REQUEST:
+    case CW_MESSAGE_WINDOW_RESIZE:
     case CW_MESSAGE_POINTER_ENTER:
     case CW_MESSAGE_POINTER_LEAVE:
     case CW_MESSAGE_POINTER_MOTION:
@@ -78,6 +94,12 @@ const char *cw_message_type_name(uint16_t type) {
         return "WINDOW_PRESENT_ACK";
     case CW_MESSAGE_WINDOW_DESTROY:
         return "WINDOW_DESTROY";
+    case CW_MESSAGE_WINDOW_DAMAGE:
+        return "WINDOW_DAMAGE";
+    case CW_MESSAGE_WINDOW_FRAME_REQUEST:
+        return "WINDOW_FRAME_REQUEST";
+    case CW_MESSAGE_WINDOW_RESIZE:
+        return "WINDOW_RESIZE";
     case CW_MESSAGE_POINTER_ENTER:
         return "POINTER_ENTER";
     case CW_MESSAGE_POINTER_LEAVE:
@@ -220,11 +242,13 @@ static bool valid_frame_payload(const uint8_t *payload, uint32_t length) {
     if (payload == NULL || length < CW_WINDOW_FRAME_PREFIX_SIZE) {
         return false;
     }
-    width = cw_load_u32_le(payload + 8U);
-    height = cw_load_u32_le(payload + 12U);
-    stride = cw_load_u32_le(payload + 16U);
-    pixel_format = cw_load_u32_le(payload + 20U);
-    if (!valid_surface(width, height) || pixel_format != CW_PIXEL_FORMAT_BGRA8888) {
+    width = cw_load_u32_le(payload + 16U);
+    height = cw_load_u32_le(payload + 20U);
+    stride = cw_load_u32_le(payload + 24U);
+    pixel_format = cw_load_u32_le(payload + 28U);
+    if (cw_load_u64_le(payload + 8U) == 0U ||
+        !valid_frame_surface(width, height) ||
+        pixel_format != CW_PIXEL_FORMAT_BGRA8888) {
         return false;
     }
     minimum_stride = (uint64_t)width * 4U;
@@ -234,6 +258,59 @@ static bool valid_frame_payload(const uint8_t *payload, uint32_t length) {
     pixel_bytes = (uint64_t)stride * (uint64_t)height;
     expected_length = (uint64_t)CW_WINDOW_FRAME_PREFIX_SIZE + pixel_bytes;
     return expected_length == (uint64_t)length && expected_length <= CW_MAX_PAYLOAD;
+}
+
+static bool damage_rect_pixel_bytes(uint32_t width, uint32_t height,
+                                    uint64_t *out_bytes)
+{
+    uint64_t bytes;
+
+    if (width > CW_MAX_SURFACE_DIMENSION || height > CW_MAX_SURFACE_DIMENSION) {
+        return false;
+    }
+    bytes = (uint64_t)width * (uint64_t)height * 4U;
+    if (bytes > CW_MAX_PAYLOAD) {
+        return false;
+    }
+    *out_bytes = bytes;
+    return true;
+}
+
+static bool valid_damage_payload(const uint8_t *payload, uint32_t length)
+{
+    uint64_t offset;
+    uint32_t index;
+    uint32_t rect_count;
+
+    if (payload == NULL || length < CW_WINDOW_DAMAGE_PREFIX_SIZE ||
+        cw_load_u64_le(payload + 8U) == 0U ||
+        cw_load_u64_le(payload + 16U) == 0U ||
+        cw_load_u64_le(payload + 8U) <= cw_load_u64_le(payload + 16U) ||
+        cw_load_u32_le(payload + 28U) != 0U) {
+        return false;
+    }
+    rect_count = cw_load_u32_le(payload + 24U);
+    if (rect_count > CW_MAX_DAMAGE_RECTS) {
+        return false;
+    }
+    offset = CW_WINDOW_DAMAGE_PREFIX_SIZE;
+    for (index = 0U; index < rect_count; ++index) {
+        uint32_t width;
+        uint32_t height;
+        uint64_t pixel_bytes;
+
+        if (offset > length || (uint64_t)length - offset < CW_WINDOW_DAMAGE_RECT_PREFIX_SIZE) {
+            return false;
+        }
+        width = cw_load_u32_le(payload + offset + 8U);
+        height = cw_load_u32_le(payload + offset + 12U);
+        if (!damage_rect_pixel_bytes(width, height, &pixel_bytes) ||
+            pixel_bytes > (uint64_t)length - offset - CW_WINDOW_DAMAGE_RECT_PREFIX_SIZE) {
+            return false;
+        }
+        offset += CW_WINDOW_DAMAGE_RECT_PREFIX_SIZE + pixel_bytes;
+    }
+    return offset == length;
 }
 
 static bool valid_present_payload(const uint8_t *payload, uint32_t length) {
@@ -301,9 +378,18 @@ bool cw_message_is_valid(const CwHeader *header, const uint8_t *payload) {
                cw_load_u16_le(payload + 2U) == 0U;
     case CW_MESSAGE_WINDOW_CREATE:
         return header->payload_length == CW_WINDOW_CREATE_PAYLOAD_SIZE &&
-               valid_surface(cw_load_u32_le(payload + 8U), cw_load_u32_le(payload + 12U));
+               valid_frame_surface(cw_load_u32_le(payload + 8U),
+                                   cw_load_u32_le(payload + 12U));
     case CW_MESSAGE_WINDOW_FRAME:
         return valid_frame_payload(payload, header->payload_length);
+    case CW_MESSAGE_WINDOW_DAMAGE:
+        return valid_damage_payload(payload, header->payload_length);
+    case CW_MESSAGE_WINDOW_FRAME_REQUEST:
+        return header->payload_length == CW_WINDOW_FRAME_REQUEST_PAYLOAD_SIZE;
+    case CW_MESSAGE_WINDOW_RESIZE:
+        return header->payload_length == CW_WINDOW_RESIZE_PAYLOAD_SIZE &&
+               valid_frame_surface(cw_load_u32_le(payload + 8U),
+                                   cw_load_u32_le(payload + 12U));
     case CW_MESSAGE_WINDOW_PRESENT:
         return valid_present_payload(payload, header->payload_length);
     case CW_MESSAGE_WINDOW_PRESENT_ACK:
@@ -577,14 +663,94 @@ bool cw_decode_window_frame(const uint8_t *payload, uint32_t length, CwWindowFra
         return false;
     }
     *out = (CwWindowFrame){
-        cw_load_u64_le(payload),
-        cw_load_u32_le(payload + 8U),
-        cw_load_u32_le(payload + 12U),
+        cw_load_u64_le(payload), cw_load_u64_le(payload + 8U),
         cw_load_u32_le(payload + 16U),
         cw_load_u32_le(payload + 20U),
+        cw_load_u32_le(payload + 24U),
+        cw_load_u32_le(payload + 28U),
         payload + CW_WINDOW_FRAME_PREFIX_SIZE,
         (uint64_t)length - CW_WINDOW_FRAME_PREFIX_SIZE,
     };
+    return true;
+}
+
+bool cw_decode_window_damage(const uint8_t *payload, uint32_t length,
+                             CwWindowDamage *out)
+{
+    if (!valid_damage_payload(payload, length) || out == NULL) {
+        return false;
+    }
+    *out = (CwWindowDamage){
+        cw_load_u64_le(payload),
+        cw_load_u64_le(payload + 8U),
+        cw_load_u64_le(payload + 16U),
+        cw_load_u32_le(payload + 24U),
+        payload + CW_WINDOW_DAMAGE_PREFIX_SIZE,
+        length - CW_WINDOW_DAMAGE_PREFIX_SIZE,
+    };
+    return true;
+}
+
+bool cw_window_damage_rect_at(const CwWindowDamage *damage, uint32_t index,
+                              CwDamageRect *out)
+{
+    uint64_t offset = 0U;
+    uint32_t current;
+
+    if (damage == NULL || out == NULL || index >= damage->rect_count) {
+        return false;
+    }
+    for (current = 0U; current <= index; ++current) {
+        uint32_t width;
+        uint32_t height;
+        uint64_t pixel_bytes;
+
+        if (offset > damage->rect_data_length ||
+            (uint64_t)damage->rect_data_length - offset < CW_WINDOW_DAMAGE_RECT_PREFIX_SIZE) {
+            return false;
+        }
+        width = cw_load_u32_le(damage->rect_data + offset + 8U);
+        height = cw_load_u32_le(damage->rect_data + offset + 12U);
+        if (!damage_rect_pixel_bytes(width, height, &pixel_bytes) ||
+            pixel_bytes > (uint64_t)damage->rect_data_length - offset -
+                          CW_WINDOW_DAMAGE_RECT_PREFIX_SIZE) {
+            return false;
+        }
+        if (current == index) {
+            *out = (CwDamageRect){
+                cw_load_i32_le(damage->rect_data + offset),
+                cw_load_i32_le(damage->rect_data + offset + 4U),
+                width, height, width * 4U,
+                damage->rect_data + offset + CW_WINDOW_DAMAGE_RECT_PREFIX_SIZE,
+                pixel_bytes,
+            };
+            return true;
+        }
+        offset += CW_WINDOW_DAMAGE_RECT_PREFIX_SIZE + pixel_bytes;
+    }
+    return false;
+}
+
+bool cw_decode_window_frame_request(const uint8_t *payload, uint32_t length,
+                                    CwWindowFrameRequest *out)
+{
+    if (payload == NULL || out == NULL || length != CW_WINDOW_FRAME_REQUEST_PAYLOAD_SIZE) {
+        return false;
+    }
+    *out = (CwWindowFrameRequest){cw_load_u64_le(payload),
+                                  cw_load_u64_le(payload + 8U)};
+    return true;
+}
+
+bool cw_decode_window_resize(const uint8_t *payload, uint32_t length,
+                             CwWindowResize *out)
+{
+    if (payload == NULL || out == NULL || length != CW_WINDOW_RESIZE_PAYLOAD_SIZE ||
+        !valid_surface(cw_load_u32_le(payload + 8U), cw_load_u32_le(payload + 12U))) {
+        return false;
+    }
+    *out = (CwWindowResize){cw_load_u64_le(payload), cw_load_u32_le(payload + 8U),
+                            cw_load_u32_le(payload + 12U)};
     return true;
 }
 

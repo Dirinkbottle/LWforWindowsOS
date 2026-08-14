@@ -1,0 +1,14 @@
+fake-server listening on 127.0.0.1:44602 mode=interactive-stage3
+[present tx] win=1 seq=42 src=[220,0 580x600] dst=[0,300 580x600] visible=1
+[present ack] win=1 seq=42
+[input rx] win=1 event=button present=42 client=(133,211) output=(133,511)
+[input map] surface=(353,211) global=(2053,511)
+[grab begin] window=(1700,300) pointer=(2053,511)
+[input rx] win=1 event=motion present=42 client=(233,211) output=(233,511)
+[input map] surface=(453,211) global=(2153,511)
+[grab move] window=(1800,300)
+[present tx] win=1 seq=43 src=[120,0 680x600] dst=[0,300 680x600] visible=1
+[present ack] win=1 seq=43
+[input rx] win=1 event=button present=43 client=(233,211) output=(233,511)
+[input map] surface=(353,211) global=(2153,511)
+[grab end]

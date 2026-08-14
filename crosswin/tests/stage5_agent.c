@@ -18,7 +18,7 @@ static void fail(const char *text) { fprintf(stderr, "FAIL: stage5-agent: %s\n",
 static bool send_all(int fd, const uint8_t *p, size_t n) { while(n){ssize_t r=send(fd,p,n,0);if(r<=0)return false;p+=r;n-=(size_t)r;}return true; }
 static bool send_message(struct agent *a,uint16_t type,uint64_t seq,const uint8_t *payload,uint32_t n){CwBuffer b;bool ok;cw_buffer_init(&b);ok=cw_message_encode(&b,type,0,seq,payload,n)&&send_all(a->fd,b.data,b.length);cw_buffer_destroy(&b);return ok;}
 static bool on_message(void *ctx,const CwHeader *h,const uint8_t *p){struct agent *a=ctx;CwHelloAck ha;CwWindowCreate c;CwWindowFrame f;CwWindowPresent pr;uint8_t ack[16];
-	if(h->type==CW_MESSAGE_HELLO_ACK){if(!cw_decode_hello_ack(p,h->payload_length,&ha)||ha.selected_version!=1)fail("bad HELLO_ACK");a->hello=true;return true;}
+	if(h->type==CW_MESSAGE_HELLO_ACK){if(!cw_decode_hello_ack(p,h->payload_length,&ha)||ha.selected_version!=CW_PROTOCOL_VERSION)fail("bad HELLO_ACK");a->hello=true;return true;}
 	if(h->type==CW_MESSAGE_WINDOW_CREATE){if(!cw_decode_window_create(p,h->payload_length,&c)||!a->hello||c.window_id!=1||c.surface_width!=800||c.surface_height!=600)fail("bad CREATE");a->created=true;return true;}
 	if(h->type==CW_MESSAGE_WINDOW_FRAME){if(!cw_decode_window_frame(p,h->payload_length,&f)||!a->created||f.width!=800||f.height!=600||f.stride!=3200||f.pixel_format!=CW_PIXEL_FORMAT_BGRA8888||f.pixel_bytes!=1920000)fail("bad FRAME");a->frames++;a->framed=true;return true;}
 	if(h->type==CW_MESSAGE_WINDOW_PRESENT){
@@ -55,7 +55,7 @@ int main(int argc,char **argv){
 	addr.sin_port=htons(port);
 	if(inet_pton(AF_INET,"127.0.0.1",&addr.sin_addr)!=1) return 1;
 	a.fd=socket(AF_INET,SOCK_STREAM,0); if(a.fd<0||connect(a.fd,(struct sockaddr*)&addr,sizeof(addr))<0)fail("connect");
-	cw_store_u16_le(hello,1);cw_store_u16_le(hello+2,1);cw_store_u32_le(hello+4,CW_PIXEL_FORMAT_MASK_BGRA8888);
+	cw_store_u16_le(hello,CW_PROTOCOL_VERSION);cw_store_u16_le(hello+2,CW_PROTOCOL_VERSION);cw_store_u32_le(hello+4,CW_PIXEL_FORMAT_MASK_BGRA8888);
 	if(!send_message(&a,CW_MESSAGE_HELLO,1,hello,8))fail("HELLO send");
 	cw_decoder_init(&d);while(!a.destroyed){ssize_t n=recv(a.fd,bytes,sizeof(bytes),0);if(n<=0||!cw_decoder_feed(&d,bytes,(size_t)n,on_message,&a))fail("receive/decode");}
 	cw_decoder_destroy(&d);close(a.fd);puts(a.expect_geometry ? "stage5 geometry integration: PASS" : "stage5 real-client integration: PASS");return 0;

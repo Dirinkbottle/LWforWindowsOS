@@ -1,0 +1,995 @@
+[02:57:34.409] crosswin-stage5: present win=1 seq=5877 global=[1149,150 800x600] src=[0,0 800x600] dst=[125,150 800x600] visible=1
+[02:57:34.409] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.409] crosswin-stage5: present ack win=1 seq=5877
+[02:57:34.417] crosswin-stage6: view move old-delta=[-83,-9] new-global=[1152,150] pointer=[1235,159]
+[02:57:34.417] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.417] crosswin-stage5: present win=1 seq=5878 global=[1152,150 800x600] src=[0,0 800x600] dst=[128,150 800x600] visible=1
+[02:57:34.418] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.418] crosswin-stage5: present ack win=1 seq=5878
+[02:57:34.425] crosswin-stage6: view move old-delta=[-83,-9] new-global=[1154,150] pointer=[1237,159]
+[02:57:34.425] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.425] crosswin-stage5: present win=1 seq=5879 global=[1154,150 800x600] src=[0,0 800x600] dst=[130,150 800x600] visible=1
+[02:57:34.425] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.425] crosswin-stage5: present ack win=1 seq=5879
+[02:57:34.439] crosswin-stage6: view move old-delta=[-83,-9] new-global=[1155,150] pointer=[1238,159]
+[02:57:34.439] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.439] crosswin-stage5: present win=1 seq=5880 global=[1155,150 800x600] src=[0,0 800x600] dst=[131,150 800x600] visible=1
+[02:57:34.440] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.440] crosswin-stage5: present ack win=1 seq=5880
+[02:57:34.523] crosswin-stage6: view move old-delta=[-83,-9] new-global=[1154,150] pointer=[1237,159]
+[02:57:34.523] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.523] crosswin-stage5: present win=1 seq=5881 global=[1154,150 800x600] src=[0,0 800x600] dst=[130,150 800x600] visible=1
+[02:57:34.524] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.524] crosswin-stage5: present ack win=1 seq=5881
+[02:57:34.529] crosswin-stage6: view move old-delta=[-83,-9] new-global=[1152,150] pointer=[1235,159]
+[02:57:34.529] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.529] crosswin-stage5: present win=1 seq=5882 global=[1152,150 800x600] src=[0,0 800x600] dst=[128,150 800x600] visible=1
+[02:57:34.530] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.530] crosswin-stage5: present ack win=1 seq=5882
+[02:57:34.537] crosswin-stage6: view move old-delta=[-83,-9] new-global=[1148,150] pointer=[1231,159]
+[02:57:34.537] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.537] crosswin-stage5: present win=1 seq=5883 global=[1148,150 800x600] src=[0,0 800x600] dst=[124,150 800x600] visible=1
+[02:57:34.538] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.538] crosswin-stage5: present ack win=1 seq=5883
+[02:57:34.545] crosswin-stage6: view move old-delta=[-83,-9] new-global=[1141,150] pointer=[1224,159]
+[02:57:34.545] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.545] crosswin-stage5: present win=1 seq=5884 global=[1141,150 800x600] src=[0,0 800x600] dst=[117,150 800x600] visible=1
+[02:57:34.546] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.546] crosswin-stage5: present ack win=1 seq=5884
+[02:57:34.553] crosswin-stage6: view move old-delta=[-83,-9] new-global=[1124,150] pointer=[1207,159]
+[02:57:34.553] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.553] crosswin-stage5: present win=1 seq=5885 global=[1124,150 800x600] src=[0,0 800x600] dst=[100,150 800x600] visible=1
+[02:57:34.554] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.554] crosswin-stage5: present ack win=1 seq=5885
+[02:57:34.559] crosswin-stage6: view move old-delta=[-83,-9] new-global=[1100,150] pointer=[1183,159]
+[02:57:34.559] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.559] crosswin-stage5: present win=1 seq=5886 global=[1100,150 800x600] src=[0,0 800x600] dst=[76,150 800x600] visible=1
+[02:57:34.559] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.559] crosswin-stage5: present ack win=1 seq=5886
+[02:57:34.567] crosswin-stage6: view move old-delta=[-83,-9] new-global=[1074,150] pointer=[1157,159]
+[02:57:34.567] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.567] crosswin-stage5: present win=1 seq=5887 global=[1074,150 800x600] src=[0,0 800x600] dst=[50,150 800x600] visible=1
+[02:57:34.568] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.568] crosswin-stage5: present ack win=1 seq=5887
+[02:57:34.575] crosswin-stage6: view move old-delta=[-83,-9] new-global=[1044,150] pointer=[1127,159]
+[02:57:34.575] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.575] crosswin-stage5: present win=1 seq=5888 global=[1044,150 800x600] src=[0,0 800x600] dst=[20,150 800x600] visible=1
+[02:57:34.575] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.575] crosswin-stage5: present ack win=1 seq=5888
+[02:57:34.583] crosswin-stage6: view move old-delta=[-83,-9] new-global=[1012,152] pointer=[1095,161]
+[02:57:34.583] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.583] crosswin-stage5: present win=1 seq=5889 global=[1012,152 800x600] src=[12,0 788x600] dst=[0,152 788x600] visible=1
+[02:57:34.584] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.584] crosswin-stage5: present ack win=1 seq=5889
+[02:57:34.589] crosswin-stage6: view move old-delta=[-83,-9] new-global=[974,152] pointer=[1057,161]
+[02:57:34.589] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.589] crosswin-stage5: present win=1 seq=5890 global=[974,152 800x600] src=[50,0 750x600] dst=[0,152 750x600] visible=1
+[02:57:34.590] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.590] crosswin-stage5: present ack win=1 seq=5890
+[02:57:34.597] crosswin-stage6: view move old-delta=[-83,-9] new-global=[934,152] pointer=[1017,161]
+[02:57:34.597] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.597] crosswin-stage5: present win=1 seq=5891 global=[934,152 800x600] src=[90,0 710x600] dst=[0,152 710x600] visible=1
+[02:57:34.598] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.598] crosswin-stage5: present ack win=1 seq=5891
+[02:57:34.605] crosswin-stage6: view move old-delta=[-83,-9] new-global=[890,152] pointer=[973,161]
+[02:57:34.605] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.605] crosswin-stage5: present win=1 seq=5892 global=[890,152 800x600] src=[134,0 666x600] dst=[0,152 666x600] visible=1
+[02:57:34.606] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.606] crosswin-stage5: present ack win=1 seq=5892
+[02:57:34.613] crosswin-stage6: view move old-delta=[-83,-9] new-global=[844,152] pointer=[927,161]
+[02:57:34.613] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.613] crosswin-stage5: present win=1 seq=5893 global=[844,152 800x600] src=[180,0 620x600] dst=[0,152 620x600] visible=1
+[02:57:34.614] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.614] crosswin-stage5: present ack win=1 seq=5893
+[02:57:34.619] crosswin-stage6: view move old-delta=[-83,-9] new-global=[796,152] pointer=[879,161]
+[02:57:34.619] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.619] crosswin-stage5: present win=1 seq=5894 global=[796,152 800x600] src=[228,0 572x600] dst=[0,152 572x600] visible=1
+[02:57:34.620] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.620] crosswin-stage5: present ack win=1 seq=5894
+[02:57:34.627] crosswin-stage6: view move old-delta=[-83,-9] new-global=[748,152] pointer=[831,161]
+[02:57:34.627] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.627] crosswin-stage5: present win=1 seq=5895 global=[748,152 800x600] src=[276,0 524x600] dst=[0,152 524x600] visible=1
+[02:57:34.628] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.628] crosswin-stage5: present ack win=1 seq=5895
+[02:57:34.635] crosswin-stage6: view move old-delta=[-83,-9] new-global=[700,152] pointer=[783,161]
+[02:57:34.635] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.635] crosswin-stage5: present win=1 seq=5896 global=[700,152 800x600] src=[324,0 476x600] dst=[0,152 476x600] visible=1
+[02:57:34.636] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.636] crosswin-stage5: present ack win=1 seq=5896
+[02:57:34.643] crosswin-stage6: view move old-delta=[-83,-9] new-global=[652,152] pointer=[735,161]
+[02:57:34.643] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.643] crosswin-stage5: present win=1 seq=5897 global=[652,152 800x600] src=[372,0 428x600] dst=[0,152 428x600] visible=1
+[02:57:34.644] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.644] crosswin-stage5: present ack win=1 seq=5897
+[02:57:34.649] crosswin-stage6: view move old-delta=[-83,-9] new-global=[604,150] pointer=[687,159]
+[02:57:34.649] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.649] crosswin-stage5: present win=1 seq=5898 global=[604,150 800x600] src=[420,0 380x600] dst=[0,150 380x600] visible=1
+[02:57:34.650] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.650] crosswin-stage5: present ack win=1 seq=5898
+[02:57:34.657] crosswin-stage6: view move old-delta=[-83,-9] new-global=[556,150] pointer=[639,159]
+[02:57:34.657] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.657] crosswin-stage5: present win=1 seq=5899 global=[556,150 800x600] src=[468,0 332x600] dst=[0,150 332x600] visible=1
+[02:57:34.658] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.658] crosswin-stage5: present ack win=1 seq=5899
+[02:57:34.665] crosswin-stage6: view move old-delta=[-83,-9] new-global=[510,146] pointer=[593,155]
+[02:57:34.665] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.665] crosswin-stage5: present win=1 seq=5900 global=[510,146 800x600] src=[514,0 286x600] dst=[0,146 286x600] visible=1
+[02:57:34.666] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.666] crosswin-stage5: present ack win=1 seq=5900
+[02:57:34.673] crosswin-stage6: view move old-delta=[-83,-9] new-global=[466,144] pointer=[549,153]
+[02:57:34.673] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.673] crosswin-stage5: present win=1 seq=5901 global=[466,144 800x600] src=[558,0 242x600] dst=[0,144 242x600] visible=1
+[02:57:34.674] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.674] crosswin-stage5: present ack win=1 seq=5901
+[02:57:34.679] crosswin-stage6: view move old-delta=[-83,-9] new-global=[424,140] pointer=[507,149]
+[02:57:34.679] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.679] crosswin-stage5: present win=1 seq=5902 global=[424,140 800x600] src=[600,0 200x600] dst=[0,140 200x600] visible=1
+[02:57:34.682] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.682] crosswin-stage5: present ack win=1 seq=5902
+[02:57:34.687] crosswin-stage6: view move old-delta=[-83,-9] new-global=[386,138] pointer=[469,147]
+[02:57:34.687] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.687] crosswin-stage5: present win=1 seq=5903 global=[386,138 800x600] src=[638,0 162x600] dst=[0,138 162x600] visible=1
+[02:57:34.688] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.688] crosswin-stage5: present ack win=1 seq=5903
+[02:57:34.695] crosswin-stage6: view move old-delta=[-83,-9] new-global=[350,136] pointer=[433,145]
+[02:57:34.695] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.695] crosswin-stage5: present win=1 seq=5904 global=[350,136 800x600] src=[674,0 126x600] dst=[0,136 126x600] visible=1
+[02:57:34.696] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.696] crosswin-stage5: present ack win=1 seq=5904
+[02:57:34.703] crosswin-stage6: view move old-delta=[-83,-9] new-global=[318,136] pointer=[401,145]
+[02:57:34.703] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.703] crosswin-stage5: present win=1 seq=5905 global=[318,136 800x600] src=[706,0 94x600] dst=[0,136 94x600] visible=1
+[02:57:34.704] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.704] crosswin-stage5: present ack win=1 seq=5905
+[02:57:34.709] crosswin-stage6: view move old-delta=[-83,-9] new-global=[288,134] pointer=[371,143]
+[02:57:34.709] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.709] crosswin-stage5: present win=1 seq=5906 global=[288,134 800x600] src=[736,0 64x600] dst=[0,134 64x600] visible=1
+[02:57:34.710] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.710] crosswin-stage5: present ack win=1 seq=5906
+[02:57:34.717] crosswin-stage6: view move old-delta=[-83,-9] new-global=[262,134] pointer=[345,143]
+[02:57:34.717] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.717] crosswin-stage5: present win=1 seq=5907 global=[262,134 800x600] src=[762,0 38x600] dst=[0,134 38x600] visible=1
+[02:57:34.718] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.718] crosswin-stage5: present ack win=1 seq=5907
+[02:57:34.725] crosswin-stage6: view move old-delta=[-83,-9] new-global=[238,132] pointer=[321,141]
+[02:57:34.725] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.725] crosswin-stage5: present win=1 seq=5908 global=[238,132 800x600] src=[786,0 14x600] dst=[0,132 14x600] visible=1
+[02:57:34.726] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.726] crosswin-stage5: present ack win=1 seq=5908
+[02:57:34.733] crosswin-stage6: view move old-delta=[-83,-9] new-global=[216,132] pointer=[299,141]
+[02:57:34.733] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.733] crosswin-stage5: present win=1 seq=5909 global=[216,132 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:34.733] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.733] crosswin-stage5: present ack win=1 seq=5909
+[02:57:34.739] crosswin-stage6: view move old-delta=[-83,-9] new-global=[198,130] pointer=[281,139]
+[02:57:34.739] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.739] crosswin-stage5: present win=1 seq=5910 global=[198,130 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:34.739] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.739] crosswin-stage5: present ack win=1 seq=5910
+[02:57:34.747] crosswin-stage6: view move old-delta=[-83,-9] new-global=[181,130] pointer=[264,139]
+[02:57:34.747] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.747] crosswin-stage5: present win=1 seq=5911 global=[181,130 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:34.747] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.747] crosswin-stage5: present ack win=1 seq=5911
+[02:57:34.755] crosswin-stage6: view move old-delta=[-83,-9] new-global=[169,130] pointer=[252,139]
+[02:57:34.755] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.755] crosswin-stage5: present win=1 seq=5912 global=[169,130 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:34.755] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.755] crosswin-stage5: present ack win=1 seq=5912
+[02:57:34.763] crosswin-stage6: view move old-delta=[-83,-9] new-global=[158,130] pointer=[241,139]
+[02:57:34.763] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.763] crosswin-stage5: present win=1 seq=5913 global=[158,130 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:34.763] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.763] crosswin-stage5: present ack win=1 seq=5913
+[02:57:34.769] crosswin-stage6: view move old-delta=[-83,-9] new-global=[149,130] pointer=[232,139]
+[02:57:34.769] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.769] crosswin-stage5: present win=1 seq=5914 global=[149,130 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:34.769] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.769] crosswin-stage5: present ack win=1 seq=5914
+[02:57:34.777] crosswin-stage6: view move old-delta=[-83,-9] new-global=[143,130] pointer=[226,139]
+[02:57:34.777] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.777] crosswin-stage5: present win=1 seq=5915 global=[143,130 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:34.777] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.777] crosswin-stage5: present ack win=1 seq=5915
+[02:57:34.785] crosswin-stage6: view move old-delta=[-83,-9] new-global=[139,130] pointer=[222,139]
+[02:57:34.785] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.785] crosswin-stage5: present win=1 seq=5916 global=[139,130 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:34.785] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.785] crosswin-stage5: present ack win=1 seq=5916
+[02:57:34.793] crosswin-stage6: view move old-delta=[-83,-9] new-global=[136,130] pointer=[219,139]
+[02:57:34.793] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.793] crosswin-stage5: present win=1 seq=5917 global=[136,130 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:34.793] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.793] crosswin-stage5: present ack win=1 seq=5917
+[02:57:34.799] crosswin-stage6: view move old-delta=[-83,-9] new-global=[134,130] pointer=[217,139]
+[02:57:34.799] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.799] crosswin-stage5: present win=1 seq=5918 global=[134,130 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:34.799] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.799] crosswin-stage5: present ack win=1 seq=5918
+[02:57:34.807] crosswin-stage6: view move old-delta=[-83,-9] new-global=[133,130] pointer=[216,139]
+[02:57:34.807] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:34.807] crosswin-stage5: present win=1 seq=5919 global=[133,130 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:34.807] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:34.807] crosswin-stage5: present ack win=1 seq=5919
+[02:57:47.567] crosswin-stage6: xdg move begin pointer=[179,148] view=[133,130] delta=[-46,-18]
+[02:57:47.657] crosswin-stage6: view move old-delta=[-46,-18] new-global=[133,129] pointer=[179,147]
+[02:57:47.657] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.657] crosswin-stage5: present win=1 seq=5920 global=[133,129 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.658] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.658] crosswin-stage5: present ack win=1 seq=5920
+[02:57:47.665] crosswin-stage6: view move old-delta=[-46,-18] new-global=[134,129] pointer=[180,146]
+[02:57:47.665] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.665] crosswin-stage5: present win=1 seq=5921 global=[134,129 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.665] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.665] crosswin-stage5: present ack win=1 seq=5921
+[02:57:47.673] crosswin-stage6: view move old-delta=[-46,-18] new-global=[135,128] pointer=[181,145]
+[02:57:47.673] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.673] crosswin-stage5: present win=1 seq=5922 global=[135,128 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.673] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.673] crosswin-stage5: present ack win=1 seq=5922
+[02:57:47.679] crosswin-stage6: view move old-delta=[-46,-18] new-global=[137,127] pointer=[183,144]
+[02:57:47.679] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.679] crosswin-stage5: present win=1 seq=5923 global=[137,127 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.679] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.679] crosswin-stage5: present ack win=1 seq=5923
+[02:57:47.687] crosswin-stage6: view move old-delta=[-46,-18] new-global=[138,126] pointer=[184,143]
+[02:57:47.687] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.687] crosswin-stage5: present win=1 seq=5924 global=[138,126 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.687] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.687] crosswin-stage5: present ack win=1 seq=5924
+[02:57:47.695] crosswin-stage6: view move old-delta=[-46,-18] new-global=[139,125] pointer=[185,142]
+[02:57:47.695] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.695] crosswin-stage5: present win=1 seq=5925 global=[139,125 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.695] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.695] crosswin-stage5: present ack win=1 seq=5925
+[02:57:47.703] crosswin-stage6: view move old-delta=[-46,-18] new-global=[140,124] pointer=[186,141]
+[02:57:47.703] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.703] crosswin-stage5: present win=1 seq=5926 global=[140,124 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.703] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.703] crosswin-stage5: present ack win=1 seq=5926
+[02:57:47.709] crosswin-stage6: view move old-delta=[-46,-18] new-global=[141,123] pointer=[187,140]
+[02:57:47.709] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.709] crosswin-stage5: present win=1 seq=5927 global=[141,123 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.709] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.709] crosswin-stage5: present ack win=1 seq=5927
+[02:57:47.717] crosswin-stage6: view move old-delta=[-46,-18] new-global=[142,121] pointer=[188,138]
+[02:57:47.717] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.717] crosswin-stage5: present win=1 seq=5928 global=[142,121 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.717] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.717] crosswin-stage5: present ack win=1 seq=5928
+[02:57:47.725] crosswin-stage6: view move old-delta=[-46,-18] new-global=[143,120] pointer=[189,137]
+[02:57:47.725] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.725] crosswin-stage5: present win=1 seq=5929 global=[143,120 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.725] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.725] crosswin-stage5: present ack win=1 seq=5929
+[02:57:47.733] crosswin-stage6: view move old-delta=[-46,-18] new-global=[144,119] pointer=[190,136]
+[02:57:47.733] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.733] crosswin-stage5: present win=1 seq=5930 global=[144,119 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.733] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.733] crosswin-stage5: present ack win=1 seq=5930
+[02:57:47.739] crosswin-stage6: view move old-delta=[-46,-18] new-global=[145,118] pointer=[191,135]
+[02:57:47.739] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.739] crosswin-stage5: present win=1 seq=5931 global=[145,118 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.739] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.739] crosswin-stage5: present ack win=1 seq=5931
+[02:57:47.755] crosswin-stage6: view move old-delta=[-46,-18] new-global=[146,117] pointer=[192,134]
+[02:57:47.755] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.755] crosswin-stage5: present win=1 seq=5932 global=[146,117 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.755] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.755] crosswin-stage5: present ack win=1 seq=5932
+[02:57:47.763] crosswin-stage6: view move old-delta=[-46,-18] new-global=[146,116] pointer=[192,133]
+[02:57:47.763] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.763] crosswin-stage5: present win=1 seq=5933 global=[146,116 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.763] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.763] crosswin-stage5: present ack win=1 seq=5933
+[02:57:47.769] crosswin-stage6: view move old-delta=[-46,-18] new-global=[147,115] pointer=[193,132]
+[02:57:47.769] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.769] crosswin-stage5: present win=1 seq=5934 global=[147,115 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.769] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.769] crosswin-stage5: present ack win=1 seq=5934
+[02:57:47.777] crosswin-stage6: view move old-delta=[-46,-18] new-global=[148,114] pointer=[194,131]
+[02:57:47.777] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.777] crosswin-stage5: present win=1 seq=5935 global=[148,114 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.777] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.777] crosswin-stage5: present ack win=1 seq=5935
+[02:57:47.793] crosswin-stage6: view move old-delta=[-46,-18] new-global=[149,113] pointer=[195,130]
+[02:57:47.793] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.793] crosswin-stage5: present win=1 seq=5936 global=[149,113 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.793] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.793] crosswin-stage5: present ack win=1 seq=5936
+[02:57:47.807] crosswin-stage6: view move old-delta=[-46,-18] new-global=[150,112] pointer=[196,129]
+[02:57:47.807] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.807] crosswin-stage5: present win=1 seq=5937 global=[150,112 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.807] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.807] crosswin-stage5: present ack win=1 seq=5937
+[02:57:47.815] crosswin-stage6: view move old-delta=[-46,-18] new-global=[151,111] pointer=[197,128]
+[02:57:47.815] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.815] crosswin-stage5: present win=1 seq=5938 global=[151,111 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.815] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.815] crosswin-stage5: present ack win=1 seq=5938
+[02:57:47.829] crosswin-stage6: view move old-delta=[-46,-18] new-global=[151,110] pointer=[197,127]
+[02:57:47.829] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.829] crosswin-stage5: present win=1 seq=5939 global=[151,110 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.829] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.829] crosswin-stage5: present ack win=1 seq=5939
+[02:57:47.837] crosswin-stage6: view move old-delta=[-46,-18] new-global=[152,110] pointer=[198,127]
+[02:57:47.837] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.837] crosswin-stage5: present win=1 seq=5940 global=[152,110 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.837] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.837] crosswin-stage5: present ack win=1 seq=5940
+[02:57:47.845] crosswin-stage6: view move old-delta=[-46,-18] new-global=[153,109] pointer=[199,126]
+[02:57:47.845] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.845] crosswin-stage5: present win=1 seq=5941 global=[153,109 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.845] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.845] crosswin-stage5: present ack win=1 seq=5941
+[02:57:47.859] crosswin-stage6: view move old-delta=[-46,-18] new-global=[154,108] pointer=[200,125]
+[02:57:47.859] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.859] crosswin-stage5: present win=1 seq=5942 global=[154,108 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.859] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.859] crosswin-stage5: present ack win=1 seq=5942
+[02:57:47.867] crosswin-stage6: view move old-delta=[-46,-18] new-global=[155,108] pointer=[201,125]
+[02:57:47.867] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.867] crosswin-stage5: present win=1 seq=5943 global=[155,108 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.867] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.867] crosswin-stage5: present ack win=1 seq=5943
+[02:57:47.875] crosswin-stage6: view move old-delta=[-46,-18] new-global=[155,107] pointer=[201,124]
+[02:57:47.875] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.875] crosswin-stage5: present win=1 seq=5944 global=[155,107 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.875] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.875] crosswin-stage5: present ack win=1 seq=5944
+[02:57:47.883] crosswin-stage6: view move old-delta=[-46,-18] new-global=[156,106] pointer=[202,123]
+[02:57:47.883] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.883] crosswin-stage5: present win=1 seq=5945 global=[156,106 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.883] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.883] crosswin-stage5: present ack win=1 seq=5945
+[02:57:47.889] crosswin-stage6: view move old-delta=[-46,-18] new-global=[157,106] pointer=[203,123]
+[02:57:47.889] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.889] crosswin-stage5: present win=1 seq=5946 global=[157,106 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.889] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.889] crosswin-stage5: present ack win=1 seq=5946
+[02:57:47.897] crosswin-stage6: view move old-delta=[-46,-18] new-global=[157,105] pointer=[203,122]
+[02:57:47.897] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.897] crosswin-stage5: present win=1 seq=5947 global=[157,105 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.897] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.897] crosswin-stage5: present ack win=1 seq=5947
+[02:57:47.905] crosswin-stage6: view move old-delta=[-46,-18] new-global=[158,105] pointer=[204,122]
+[02:57:47.905] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.905] crosswin-stage5: present win=1 seq=5948 global=[158,105 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.905] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.905] crosswin-stage5: present ack win=1 seq=5948
+[02:57:47.913] crosswin-stage6: view move old-delta=[-46,-18] new-global=[158,104] pointer=[204,121]
+[02:57:47.913] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.913] crosswin-stage5: present win=1 seq=5949 global=[158,104 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.913] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.913] crosswin-stage5: present ack win=1 seq=5949
+[02:57:47.919] crosswin-stage6: view move old-delta=[-46,-18] new-global=[159,103] pointer=[205,120]
+[02:57:47.919] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.919] crosswin-stage5: present win=1 seq=5950 global=[159,103 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.919] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.919] crosswin-stage5: present ack win=1 seq=5950
+[02:57:47.927] crosswin-stage6: view move old-delta=[-46,-18] new-global=[160,102] pointer=[206,119]
+[02:57:47.927] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.927] crosswin-stage5: present win=1 seq=5951 global=[160,102 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.927] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.927] crosswin-stage5: present ack win=1 seq=5951
+[02:57:47.935] crosswin-stage6: view move old-delta=[-46,-18] new-global=[160,101] pointer=[206,118]
+[02:57:47.935] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.935] crosswin-stage5: present win=1 seq=5952 global=[160,101 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.935] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.935] crosswin-stage5: present ack win=1 seq=5952
+[02:57:47.943] crosswin-stage6: view move old-delta=[-46,-18] new-global=[161,101] pointer=[207,118]
+[02:57:47.943] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.943] crosswin-stage5: present win=1 seq=5953 global=[161,101 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.943] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.943] crosswin-stage5: present ack win=1 seq=5953
+[02:57:47.949] crosswin-stage6: view move old-delta=[-46,-18] new-global=[161,100] pointer=[207,117]
+[02:57:47.949] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.949] crosswin-stage5: present win=1 seq=5954 global=[161,100 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.950] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.950] crosswin-stage5: present ack win=1 seq=5954
+[02:57:47.957] crosswin-stage6: view move old-delta=[-46,-18] new-global=[162,99] pointer=[208,116]
+[02:57:47.957] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.957] crosswin-stage5: present win=1 seq=5955 global=[162,99 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.957] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.957] crosswin-stage5: present ack win=1 seq=5955
+[02:57:47.965] crosswin-stage6: view move old-delta=[-46,-18] new-global=[162,98] pointer=[208,115]
+[02:57:47.965] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.965] crosswin-stage5: present win=1 seq=5956 global=[162,98 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.965] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.965] crosswin-stage5: present ack win=1 seq=5956
+[02:57:47.973] crosswin-stage6: view move old-delta=[-46,-18] new-global=[163,96] pointer=[209,113]
+[02:57:47.973] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.973] crosswin-stage5: present win=1 seq=5957 global=[163,96 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.974] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.974] crosswin-stage5: present ack win=1 seq=5957
+[02:57:47.979] crosswin-stage6: view move old-delta=[-46,-18] new-global=[164,95] pointer=[210,112]
+[02:57:47.979] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.979] crosswin-stage5: present win=1 seq=5958 global=[164,95 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.979] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.979] crosswin-stage5: present ack win=1 seq=5958
+[02:57:47.987] crosswin-stage6: view move old-delta=[-46,-18] new-global=[164,94] pointer=[210,111]
+[02:57:47.987] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.987] crosswin-stage5: present win=1 seq=5959 global=[164,94 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.987] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.987] crosswin-stage5: present ack win=1 seq=5959
+[02:57:47.995] crosswin-stage6: view move old-delta=[-46,-18] new-global=[164,93] pointer=[210,110]
+[02:57:47.995] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:47.995] crosswin-stage5: present win=1 seq=5960 global=[164,93 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:47.995] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:47.995] crosswin-stage5: present ack win=1 seq=5960
+[02:57:48.003] crosswin-stage6: view move old-delta=[-46,-18] new-global=[165,92] pointer=[211,109]
+[02:57:48.003] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.003] crosswin-stage5: present win=1 seq=5961 global=[165,92 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.003] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.003] crosswin-stage5: present ack win=1 seq=5961
+[02:57:48.009] crosswin-stage6: view move old-delta=[-46,-18] new-global=[165,91] pointer=[211,108]
+[02:57:48.009] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.009] crosswin-stage5: present win=1 seq=5962 global=[165,91 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.009] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.009] crosswin-stage5: present ack win=1 seq=5962
+[02:57:48.017] crosswin-stage6: view move old-delta=[-46,-18] new-global=[166,90] pointer=[212,107]
+[02:57:48.017] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.017] crosswin-stage5: present win=1 seq=5963 global=[166,90 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.017] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.017] crosswin-stage5: present ack win=1 seq=5963
+[02:57:48.025] crosswin-stage6: view move old-delta=[-46,-18] new-global=[166,89] pointer=[212,106]
+[02:57:48.025] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.025] crosswin-stage5: present win=1 seq=5964 global=[166,89 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.025] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.025] crosswin-stage5: present ack win=1 seq=5964
+[02:57:48.033] crosswin-stage6: view move old-delta=[-46,-18] new-global=[167,89] pointer=[213,106]
+[02:57:48.033] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.033] crosswin-stage5: present win=1 seq=5965 global=[167,89 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.033] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.033] crosswin-stage5: present ack win=1 seq=5965
+[02:57:48.039] crosswin-stage6: view move old-delta=[-46,-18] new-global=[167,88] pointer=[213,105]
+[02:57:48.039] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.039] crosswin-stage5: present win=1 seq=5966 global=[167,88 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.039] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.039] crosswin-stage5: present ack win=1 seq=5966
+[02:57:48.047] crosswin-stage6: view move old-delta=[-46,-18] new-global=[167,87] pointer=[213,104]
+[02:57:48.047] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.047] crosswin-stage5: present win=1 seq=5967 global=[167,87 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.047] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.047] crosswin-stage5: present ack win=1 seq=5967
+[02:57:48.055] crosswin-stage6: view move old-delta=[-46,-18] new-global=[168,86] pointer=[214,103]
+[02:57:48.055] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.055] crosswin-stage5: present win=1 seq=5968 global=[168,86 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.055] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.055] crosswin-stage5: present ack win=1 seq=5968
+[02:57:48.063] crosswin-stage6: view move old-delta=[-46,-18] new-global=[168,85] pointer=[214,102]
+[02:57:48.063] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.063] crosswin-stage5: present win=1 seq=5969 global=[168,85 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.063] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.063] crosswin-stage5: present ack win=1 seq=5969
+[02:57:48.069] crosswin-stage6: view move old-delta=[-46,-18] new-global=[169,84] pointer=[215,101]
+[02:57:48.069] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.069] crosswin-stage5: present win=1 seq=5970 global=[169,84 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.069] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.069] crosswin-stage5: present ack win=1 seq=5970
+[02:57:48.077] crosswin-stage6: view move old-delta=[-46,-18] new-global=[169,83] pointer=[215,100]
+[02:57:48.077] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.077] crosswin-stage5: present win=1 seq=5971 global=[169,83 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.077] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.077] crosswin-stage5: present ack win=1 seq=5971
+[02:57:48.085] crosswin-stage6: view move old-delta=[-46,-18] new-global=[169,82] pointer=[215,99]
+[02:57:48.085] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.085] crosswin-stage5: present win=1 seq=5972 global=[169,82 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.085] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.085] crosswin-stage5: present ack win=1 seq=5972
+[02:57:48.093] crosswin-stage6: view move old-delta=[-46,-18] new-global=[170,80] pointer=[216,97]
+[02:57:48.093] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.093] crosswin-stage5: present win=1 seq=5973 global=[170,80 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.093] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.093] crosswin-stage5: present ack win=1 seq=5973
+[02:57:48.099] crosswin-stage6: view move old-delta=[-46,-18] new-global=[170,79] pointer=[216,96]
+[02:57:48.099] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.099] crosswin-stage5: present win=1 seq=5974 global=[170,79 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.099] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.099] crosswin-stage5: present ack win=1 seq=5974
+[02:57:48.107] crosswin-stage6: view move old-delta=[-46,-18] new-global=[171,78] pointer=[217,95]
+[02:57:48.107] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.107] crosswin-stage5: present win=1 seq=5975 global=[171,78 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.107] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.107] crosswin-stage5: present ack win=1 seq=5975
+[02:57:48.115] crosswin-stage6: view move old-delta=[-46,-18] new-global=[171,77] pointer=[217,94]
+[02:57:48.115] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.115] crosswin-stage5: present win=1 seq=5976 global=[171,77 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.115] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.115] crosswin-stage5: present ack win=1 seq=5976
+[02:57:48.123] crosswin-stage6: view move old-delta=[-46,-18] new-global=[171,76] pointer=[217,93]
+[02:57:48.123] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.123] crosswin-stage5: present win=1 seq=5977 global=[171,76 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.123] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.123] crosswin-stage5: present ack win=1 seq=5977
+[02:57:48.129] crosswin-stage6: view move old-delta=[-46,-18] new-global=[172,75] pointer=[218,92]
+[02:57:48.129] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.129] crosswin-stage5: present win=1 seq=5978 global=[172,75 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.129] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.129] crosswin-stage5: present ack win=1 seq=5978
+[02:57:48.137] crosswin-stage6: view move old-delta=[-46,-18] new-global=[172,74] pointer=[218,91]
+[02:57:48.137] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.137] crosswin-stage5: present win=1 seq=5979 global=[172,74 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.137] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.137] crosswin-stage5: present ack win=1 seq=5979
+[02:57:48.145] crosswin-stage6: view move old-delta=[-46,-18] new-global=[172,73] pointer=[218,90]
+[02:57:48.145] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.145] crosswin-stage5: present win=1 seq=5980 global=[172,73 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.146] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.146] crosswin-stage5: present ack win=1 seq=5980
+[02:57:48.153] crosswin-stage6: view move old-delta=[-46,-18] new-global=[172,72] pointer=[218,89]
+[02:57:48.153] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.153] crosswin-stage5: present win=1 seq=5981 global=[172,72 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.153] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.153] crosswin-stage5: present ack win=1 seq=5981
+[02:57:48.159] crosswin-stage6: view move old-delta=[-46,-18] new-global=[172,71] pointer=[218,88]
+[02:57:48.159] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.159] crosswin-stage5: present win=1 seq=5982 global=[172,71 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.159] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.159] crosswin-stage5: present ack win=1 seq=5982
+[02:57:48.167] crosswin-stage6: view move old-delta=[-46,-18] new-global=[173,70] pointer=[219,87]
+[02:57:48.167] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.167] crosswin-stage5: present win=1 seq=5983 global=[173,70 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.167] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.167] crosswin-stage5: present ack win=1 seq=5983
+[02:57:48.175] crosswin-stage6: view move old-delta=[-46,-18] new-global=[173,68] pointer=[219,85]
+[02:57:48.175] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.175] crosswin-stage5: present win=1 seq=5984 global=[173,68 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.175] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.175] crosswin-stage5: present ack win=1 seq=5984
+[02:57:48.183] crosswin-stage6: view move old-delta=[-46,-18] new-global=[173,67] pointer=[219,84]
+[02:57:48.183] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.183] crosswin-stage5: present win=1 seq=5985 global=[173,67 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.183] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.183] crosswin-stage5: present ack win=1 seq=5985
+[02:57:48.189] crosswin-stage6: view move old-delta=[-46,-18] new-global=[173,66] pointer=[219,83]
+[02:57:48.189] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.189] crosswin-stage5: present win=1 seq=5986 global=[173,66 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.189] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.189] crosswin-stage5: present ack win=1 seq=5986
+[02:57:48.197] crosswin-stage6: view move old-delta=[-46,-18] new-global=[173,65] pointer=[219,82]
+[02:57:48.197] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.197] crosswin-stage5: present win=1 seq=5987 global=[173,65 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.197] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.197] crosswin-stage5: present ack win=1 seq=5987
+[02:57:48.205] crosswin-stage6: view move old-delta=[-46,-18] new-global=[173,64] pointer=[219,81]
+[02:57:48.205] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.205] crosswin-stage5: present win=1 seq=5988 global=[173,64 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.205] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.205] crosswin-stage5: present ack win=1 seq=5988
+[02:57:48.213] crosswin-stage6: view move old-delta=[-46,-18] new-global=[173,63] pointer=[219,80]
+[02:57:48.213] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.213] crosswin-stage5: present win=1 seq=5989 global=[173,63 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.213] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.213] crosswin-stage5: present ack win=1 seq=5989
+[02:57:48.219] crosswin-stage6: view move old-delta=[-46,-18] new-global=[174,61] pointer=[220,78]
+[02:57:48.219] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.219] crosswin-stage5: present win=1 seq=5990 global=[174,61 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.220] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.220] crosswin-stage5: present ack win=1 seq=5990
+[02:57:48.227] crosswin-stage6: view move old-delta=[-46,-18] new-global=[174,60] pointer=[220,77]
+[02:57:48.227] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.227] crosswin-stage5: present win=1 seq=5991 global=[174,60 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.227] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.227] crosswin-stage5: present ack win=1 seq=5991
+[02:57:48.243] crosswin-stage6: view move old-delta=[-46,-18] new-global=[175,59] pointer=[221,76]
+[02:57:48.243] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.243] crosswin-stage5: present win=1 seq=5992 global=[175,59 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.243] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.243] crosswin-stage5: present ack win=1 seq=5992
+[02:57:48.249] crosswin-stage6: view move old-delta=[-46,-18] new-global=[175,58] pointer=[221,75]
+[02:57:48.249] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.249] crosswin-stage5: present win=1 seq=5993 global=[175,58 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.249] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.249] crosswin-stage5: present ack win=1 seq=5993
+[02:57:48.257] crosswin-stage6: view move old-delta=[-46,-18] new-global=[175,57] pointer=[221,74]
+[02:57:48.257] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.257] crosswin-stage5: present win=1 seq=5994 global=[175,57 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.257] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.257] crosswin-stage5: present ack win=1 seq=5994
+[02:57:48.265] crosswin-stage6: view move old-delta=[-46,-18] new-global=[175,56] pointer=[221,73]
+[02:57:48.265] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.265] crosswin-stage5: present win=1 seq=5995 global=[175,56 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.265] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.265] crosswin-stage5: present ack win=1 seq=5995
+[02:57:48.273] crosswin-stage6: view move old-delta=[-46,-18] new-global=[176,56] pointer=[222,73]
+[02:57:48.273] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.273] crosswin-stage5: present win=1 seq=5996 global=[176,56 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.273] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.273] crosswin-stage5: present ack win=1 seq=5996
+[02:57:48.279] crosswin-stage6: view move old-delta=[-46,-18] new-global=[176,55] pointer=[222,72]
+[02:57:48.279] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.279] crosswin-stage5: present win=1 seq=5997 global=[176,55 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.279] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.279] crosswin-stage5: present ack win=1 seq=5997
+[02:57:48.295] crosswin-stage6: view move old-delta=[-46,-18] new-global=[177,54] pointer=[223,71]
+[02:57:48.295] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.295] crosswin-stage5: present win=1 seq=5998 global=[177,54 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.295] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.295] crosswin-stage5: present ack win=1 seq=5998
+[02:57:48.303] crosswin-stage6: view move old-delta=[-46,-18] new-global=[177,53] pointer=[223,70]
+[02:57:48.303] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.303] crosswin-stage5: present win=1 seq=5999 global=[177,53 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.303] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.303] crosswin-stage5: present ack win=1 seq=5999
+[02:57:48.309] crosswin-stage6: view move old-delta=[-46,-18] new-global=[178,53] pointer=[224,70]
+[02:57:48.309] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.309] crosswin-stage5: present win=1 seq=6000 global=[178,53 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.309] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.309] crosswin-stage5: present ack win=1 seq=6000
+[02:57:48.317] crosswin-stage6: view move old-delta=[-46,-18] new-global=[178,52] pointer=[224,69]
+[02:57:48.317] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.318] crosswin-stage5: present win=1 seq=6001 global=[178,52 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.318] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.318] crosswin-stage5: present ack win=1 seq=6001
+[02:57:48.325] crosswin-stage6: view move old-delta=[-46,-18] new-global=[179,52] pointer=[225,69]
+[02:57:48.325] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.325] crosswin-stage5: present win=1 seq=6002 global=[179,52 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.325] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.325] crosswin-stage5: present ack win=1 seq=6002
+[02:57:48.333] crosswin-stage6: view move old-delta=[-46,-18] new-global=[179,51] pointer=[225,68]
+[02:57:48.333] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.333] crosswin-stage5: present win=1 seq=6003 global=[179,51 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.333] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.333] crosswin-stage5: present ack win=1 seq=6003
+[02:57:48.347] crosswin-stage6: view move old-delta=[-46,-18] new-global=[180,50] pointer=[226,67]
+[02:57:48.347] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.347] crosswin-stage5: present win=1 seq=6004 global=[180,50 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.347] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.347] crosswin-stage5: present ack win=1 seq=6004
+[02:57:48.363] crosswin-stage6: view move old-delta=[-46,-18] new-global=[181,50] pointer=[227,67]
+[02:57:48.363] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.363] crosswin-stage5: present win=1 seq=6005 global=[181,50 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.363] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.363] crosswin-stage5: present ack win=1 seq=6005
+[02:57:48.369] crosswin-stage6: view move old-delta=[-46,-18] new-global=[181,49] pointer=[227,66]
+[02:57:48.369] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.369] crosswin-stage5: present win=1 seq=6006 global=[181,49 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.369] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.369] crosswin-stage5: present ack win=1 seq=6006
+[02:57:48.377] crosswin-stage6: view move old-delta=[-46,-18] new-global=[182,49] pointer=[228,66]
+[02:57:48.377] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.377] crosswin-stage5: present win=1 seq=6007 global=[182,49 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.377] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.377] crosswin-stage5: present ack win=1 seq=6007
+[02:57:48.393] crosswin-stage6: view move old-delta=[-46,-18] new-global=[183,49] pointer=[229,66]
+[02:57:48.393] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.393] crosswin-stage5: present win=1 seq=6008 global=[183,49 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.393] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.393] crosswin-stage5: present ack win=1 seq=6008
+[02:57:48.399] crosswin-stage6: view move old-delta=[-46,-18] new-global=[183,48] pointer=[229,65]
+[02:57:48.399] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.399] crosswin-stage5: present win=1 seq=6009 global=[183,48 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.399] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.399] crosswin-stage5: present ack win=1 seq=6009
+[02:57:48.415] crosswin-stage6: view move old-delta=[-46,-18] new-global=[184,48] pointer=[230,65]
+[02:57:48.415] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.415] crosswin-stage5: present win=1 seq=6010 global=[184,48 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.415] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.415] crosswin-stage5: present ack win=1 seq=6010
+[02:57:48.423] crosswin-stage6: view move old-delta=[-46,-18] new-global=[185,47] pointer=[231,64]
+[02:57:48.423] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.423] crosswin-stage5: present win=1 seq=6011 global=[185,47 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.423] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.423] crosswin-stage5: present ack win=1 seq=6011
+[02:57:48.429] crosswin-stage6: view move old-delta=[-46,-18] new-global=[186,47] pointer=[232,64]
+[02:57:48.429] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.429] crosswin-stage5: present win=1 seq=6012 global=[186,47 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.429] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.429] crosswin-stage5: present ack win=1 seq=6012
+[02:57:48.437] crosswin-stage6: view move old-delta=[-46,-18] new-global=[188,46] pointer=[234,63]
+[02:57:48.437] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.437] crosswin-stage5: present win=1 seq=6013 global=[188,46 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.437] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.437] crosswin-stage5: present ack win=1 seq=6013
+[02:57:48.445] crosswin-stage6: view move old-delta=[-46,-18] new-global=[189,45] pointer=[235,62]
+[02:57:48.445] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.445] crosswin-stage5: present win=1 seq=6014 global=[189,45 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.445] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.445] crosswin-stage5: present ack win=1 seq=6014
+[02:57:48.453] crosswin-stage6: view move old-delta=[-46,-18] new-global=[191,45] pointer=[237,62]
+[02:57:48.453] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.453] crosswin-stage5: present win=1 seq=6015 global=[191,45 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.453] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.453] crosswin-stage5: present ack win=1 seq=6015
+[02:57:48.459] crosswin-stage6: view move old-delta=[-46,-18] new-global=[192,44] pointer=[238,61]
+[02:57:48.459] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.459] crosswin-stage5: present win=1 seq=6016 global=[192,44 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.459] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.459] crosswin-stage5: present ack win=1 seq=6016
+[02:57:48.467] crosswin-stage6: view move old-delta=[-46,-18] new-global=[193,43] pointer=[239,60]
+[02:57:48.467] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.467] crosswin-stage5: present win=1 seq=6017 global=[193,43 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.467] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.467] crosswin-stage5: present ack win=1 seq=6017
+[02:57:48.475] crosswin-stage6: view move old-delta=[-46,-18] new-global=[194,42] pointer=[240,59]
+[02:57:48.475] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.475] crosswin-stage5: present win=1 seq=6018 global=[194,42 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.475] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.475] crosswin-stage5: present ack win=1 seq=6018
+[02:57:48.483] crosswin-stage6: view move old-delta=[-46,-18] new-global=[195,42] pointer=[241,59]
+[02:57:48.483] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.483] crosswin-stage5: present win=1 seq=6019 global=[195,42 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.483] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.483] crosswin-stage5: present ack win=1 seq=6019
+[02:57:48.489] crosswin-stage6: view move old-delta=[-46,-18] new-global=[196,41] pointer=[242,58]
+[02:57:48.489] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.489] crosswin-stage5: present win=1 seq=6020 global=[196,41 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.490] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.490] crosswin-stage5: present ack win=1 seq=6020
+[02:57:48.497] crosswin-stage6: view move old-delta=[-46,-18] new-global=[197,41] pointer=[243,58]
+[02:57:48.497] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.497] crosswin-stage5: present win=1 seq=6021 global=[197,41 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.497] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.497] crosswin-stage5: present ack win=1 seq=6021
+[02:57:48.505] crosswin-stage6: view move old-delta=[-46,-18] new-global=[197,40] pointer=[243,57]
+[02:57:48.505] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.505] crosswin-stage5: present win=1 seq=6022 global=[197,40 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.506] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.506] crosswin-stage5: present ack win=1 seq=6022
+[02:57:48.513] crosswin-stage6: view move old-delta=[-46,-18] new-global=[198,40] pointer=[244,57]
+[02:57:48.513] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.513] crosswin-stage5: present win=1 seq=6023 global=[198,40 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.513] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.513] crosswin-stage5: present ack win=1 seq=6023
+[02:57:48.535] crosswin-stage6: view move old-delta=[-46,-18] new-global=[199,40] pointer=[245,57]
+[02:57:48.535] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.535] crosswin-stage5: present win=1 seq=6024 global=[199,40 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.535] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.535] crosswin-stage5: present ack win=1 seq=6024
+[02:57:48.573] crosswin-stage6: view move old-delta=[-46,-18] new-global=[199,40] pointer=[246,57]
+[02:57:48.573] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.573] crosswin-stage5: present win=1 seq=6025 global=[199,40 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.574] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.574] crosswin-stage5: present ack win=1 seq=6025
+[02:57:48.587] crosswin-stage6: view move old-delta=[-46,-18] new-global=[200,39] pointer=[247,56]
+[02:57:48.587] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.587] crosswin-stage5: present win=1 seq=6026 global=[200,39 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.587] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.587] crosswin-stage5: present ack win=1 seq=6026
+[02:57:48.595] crosswin-stage6: view move old-delta=[-46,-18] new-global=[201,39] pointer=[248,56]
+[02:57:48.595] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.595] crosswin-stage5: present win=1 seq=6027 global=[201,39 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.595] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.595] crosswin-stage5: present ack win=1 seq=6027
+[02:57:48.603] crosswin-stage6: view move old-delta=[-46,-18] new-global=[202,39] pointer=[249,56]
+[02:57:48.603] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.603] crosswin-stage5: present win=1 seq=6028 global=[202,39 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.603] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.603] crosswin-stage5: present ack win=1 seq=6028
+[02:57:48.609] crosswin-stage6: view move old-delta=[-46,-18] new-global=[203,38] pointer=[250,55]
+[02:57:48.609] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.609] crosswin-stage5: present win=1 seq=6029 global=[203,38 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.609] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.609] crosswin-stage5: present ack win=1 seq=6029
+[02:57:48.617] crosswin-stage6: view move old-delta=[-46,-18] new-global=[204,38] pointer=[251,55]
+[02:57:48.617] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.617] crosswin-stage5: present win=1 seq=6030 global=[204,38 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.617] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.617] crosswin-stage5: present ack win=1 seq=6030
+[02:57:48.625] crosswin-stage6: view move old-delta=[-46,-18] new-global=[205,37] pointer=[252,54]
+[02:57:48.625] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.625] crosswin-stage5: present win=1 seq=6031 global=[205,37 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.625] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.625] crosswin-stage5: present ack win=1 seq=6031
+[02:57:48.639] crosswin-stage6: view move old-delta=[-46,-18] new-global=[206,37] pointer=[253,54]
+[02:57:48.639] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.639] crosswin-stage5: present win=1 seq=6032 global=[206,37 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.639] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.639] crosswin-stage5: present ack win=1 seq=6032
+[02:57:48.655] crosswin-stage6: view move old-delta=[-46,-18] new-global=[207,37] pointer=[254,54]
+[02:57:48.655] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.655] crosswin-stage5: present win=1 seq=6033 global=[207,37 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.655] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.655] crosswin-stage5: present ack win=1 seq=6033
+[02:57:48.663] crosswin-stage6: view move old-delta=[-46,-18] new-global=[208,37] pointer=[255,54]
+[02:57:48.663] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.663] crosswin-stage5: present win=1 seq=6034 global=[208,37 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.663] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.663] crosswin-stage5: present ack win=1 seq=6034
+[02:57:48.685] crosswin-stage6: view move old-delta=[-46,-18] new-global=[209,37] pointer=[255,54]
+[02:57:48.685] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.685] crosswin-stage5: present win=1 seq=6035 global=[209,37 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.685] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.685] crosswin-stage5: present ack win=1 seq=6035
+[02:57:48.699] crosswin-stage6: view move old-delta=[-46,-18] new-global=[210,37] pointer=[256,54]
+[02:57:48.699] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.699] crosswin-stage5: present win=1 seq=6036 global=[210,37 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.699] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.699] crosswin-stage5: present ack win=1 seq=6036
+[02:57:48.715] crosswin-stage6: view move old-delta=[-46,-18] new-global=[211,37] pointer=[257,54]
+[02:57:48.715] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.715] crosswin-stage5: present win=1 seq=6037 global=[211,37 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.715] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.715] crosswin-stage5: present ack win=1 seq=6037
+[02:57:48.729] crosswin-stage6: view move old-delta=[-46,-18] new-global=[212,37] pointer=[258,54]
+[02:57:48.729] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.729] crosswin-stage5: present win=1 seq=6038 global=[212,37 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.729] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.729] crosswin-stage5: present ack win=1 seq=6038
+[02:57:48.737] crosswin-stage6: view move old-delta=[-46,-18] new-global=[213,37] pointer=[259,54]
+[02:57:48.737] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.737] crosswin-stage5: present win=1 seq=6039 global=[213,37 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.737] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.737] crosswin-stage5: present ack win=1 seq=6039
+[02:57:48.751] crosswin-stage6: view move old-delta=[-46,-18] new-global=[214,37] pointer=[260,54]
+[02:57:48.751] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.751] crosswin-stage5: present win=1 seq=6040 global=[214,37 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.751] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.751] crosswin-stage5: present ack win=1 seq=6040
+[02:57:48.767] crosswin-stage6: view move old-delta=[-46,-18] new-global=[215,37] pointer=[261,54]
+[02:57:48.767] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.767] crosswin-stage5: present win=1 seq=6041 global=[215,37 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.768] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.768] crosswin-stage5: present ack win=1 seq=6041
+[02:57:48.781] crosswin-stage6: view move old-delta=[-46,-18] new-global=[216,37] pointer=[262,54]
+[02:57:48.781] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.781] crosswin-stage5: present win=1 seq=6042 global=[216,37 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.782] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.782] crosswin-stage5: present ack win=1 seq=6042
+[02:57:48.789] crosswin-stage6: view move old-delta=[-46,-18] new-global=[217,37] pointer=[263,54]
+[02:57:48.789] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.789] crosswin-stage5: present win=1 seq=6043 global=[217,37 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.789] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.789] crosswin-stage5: present ack win=1 seq=6043
+[02:57:48.805] crosswin-stage6: view move old-delta=[-46,-18] new-global=[218,36] pointer=[264,53]
+[02:57:48.805] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.805] crosswin-stage5: present win=1 seq=6044 global=[218,36 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.806] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.806] crosswin-stage5: present ack win=1 seq=6044
+[02:57:48.827] crosswin-stage6: view move old-delta=[-46,-18] new-global=[219,36] pointer=[265,53]
+[02:57:48.827] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:48.827] crosswin-stage5: present win=1 seq=6045 global=[219,36 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:48.827] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:48.827] crosswin-stage5: present ack win=1 seq=6045
+[02:57:49.067] crosswin-stage6: view move old-delta=[-46,-18] new-global=[220,36] pointer=[266,53]
+[02:57:49.067] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:49.067] crosswin-stage5: present win=1 seq=6046 global=[220,36 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:49.068] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:49.068] crosswin-stage5: present ack win=1 seq=6046
+[02:57:49.075] crosswin-stage6: view move old-delta=[-46,-18] new-global=[220,35] pointer=[266,52]
+[02:57:49.075] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:49.075] crosswin-stage5: present win=1 seq=6047 global=[220,35 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:49.075] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:49.075] crosswin-stage5: present ack win=1 seq=6047
+[02:57:49.089] crosswin-stage6: view move old-delta=[-46,-18] new-global=[220,35] pointer=[267,52]
+[02:57:49.089] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:49.089] crosswin-stage5: present win=1 seq=6048 global=[221,35 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:49.089] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:49.089] crosswin-stage5: present ack win=1 seq=6048
+[02:57:49.119] crosswin-stage6: view move old-delta=[-46,-18] new-global=[221,35] pointer=[268,52]
+[02:57:49.119] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:49.119] crosswin-stage5: present win=1 seq=6049 global=[221,35 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:49.120] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:49.120] crosswin-stage5: present ack win=1 seq=6049
+[02:57:49.675] crosswin-stage6: view move old-delta=[-46,-18] new-global=[222,35] pointer=[268,52]
+[02:57:49.675] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:49.675] crosswin-stage5: present win=1 seq=6050 global=[222,35 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:49.676] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:49.676] crosswin-stage5: present ack win=1 seq=6050
+[02:57:49.907] crosswin-stage6: view move old-delta=[-46,-18] new-global=[222,35] pointer=[268,52]
+[02:57:49.907] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:49.907] crosswin-stage5: present win=1 seq=6051 global=[222,35 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:49.908] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:49.908] crosswin-stage5: present ack win=1 seq=6051
+[02:57:51.969] crosswin-stage6: view move old-delta=[-46,-18] new-global=[222,35] pointer=[269,52]
+[02:57:51.969] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:51.969] crosswin-stage5: present win=1 seq=6052 global=[222,35 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:51.970] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:51.970] crosswin-stage5: present ack win=1 seq=6052
+[02:57:52.133] crosswin-stage6: view move old-delta=[-46,-18] new-global=[223,35] pointer=[269,52]
+[02:57:52.133] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:52.133] crosswin-stage5: present win=1 seq=6053 global=[223,35 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:52.134] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:52.134] crosswin-stage5: present ack win=1 seq=6053
+[02:57:52.471] crosswin-stage6: view move old-delta=[-46,-18] new-global=[223,35] pointer=[269,52]
+[02:57:52.471] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:52.471] crosswin-stage5: present win=1 seq=6054 global=[223,35 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:52.472] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:52.472] crosswin-stage5: present ack win=1 seq=6054
+[02:57:52.501] crosswin-stage6: view move old-delta=[-46,-18] new-global=[224,35] pointer=[270,52]
+[02:57:52.501] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:52.501] crosswin-stage5: present win=1 seq=6055 global=[224,35 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:52.501] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:52.501] crosswin-stage5: present ack win=1 seq=6055
+[02:57:53.107] crosswin-stage6: view move old-delta=[-46,-18] new-global=[224,35] pointer=[270,52]
+[02:57:53.107] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:53.107] crosswin-stage5: present win=1 seq=6056 global=[224,35 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:53.108] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:53.108] crosswin-stage5: present ack win=1 seq=6056
+[02:57:53.287] crosswin-stage6: view move old-delta=[-46,-18] new-global=[224,35] pointer=[271,52]
+[02:57:53.287] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:53.287] crosswin-stage5: present win=1 seq=6057 global=[224,35 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:53.288] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:53.288] crosswin-stage5: present ack win=1 seq=6057
+[02:57:53.377] crosswin-stage6: view move old-delta=[-46,-18] new-global=[225,35] pointer=[271,52]
+[02:57:53.377] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:53.377] crosswin-stage5: present win=1 seq=6058 global=[225,35 800x600] src=[799,0 1x600] dst=[0,35 1x600] visible=1
+[02:57:53.379] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:53.379] crosswin-stage5: present ack win=1 seq=6058
+[02:57:53.431] crosswin-stage6: view move old-delta=[-46,-18] new-global=[225,35] pointer=[271,52]
+[02:57:53.431] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:53.431] crosswin-stage5: present win=1 seq=6059 global=[225,35 800x600] src=[799,0 1x600] dst=[0,35 1x600] visible=1
+[02:57:53.432] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:53.432] crosswin-stage5: present ack win=1 seq=6059
+[02:57:53.483] crosswin-stage6: view move old-delta=[-46,-18] new-global=[226,35] pointer=[272,52]
+[02:57:53.483] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:53.483] crosswin-stage5: present win=1 seq=6060 global=[226,35 800x600] src=[798,0 2x600] dst=[0,35 2x600] visible=1
+[02:57:53.484] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:53.484] crosswin-stage5: present ack win=1 seq=6060
+[02:57:53.535] crosswin-stage6: view move old-delta=[-46,-18] new-global=[226,35] pointer=[272,52]
+[02:57:53.535] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:53.535] crosswin-stage5: present win=1 seq=6061 global=[226,35 800x600] src=[798,0 2x600] dst=[0,35 2x600] visible=1
+[02:57:53.536] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:53.536] crosswin-stage5: present ack win=1 seq=6061
+[02:57:53.587] crosswin-stage6: view move old-delta=[-46,-18] new-global=[227,35] pointer=[273,52]
+[02:57:53.587] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:53.587] crosswin-stage5: present win=1 seq=6062 global=[227,35 800x600] src=[797,0 3x600] dst=[0,35 3x600] visible=1
+[02:57:53.589] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:53.589] crosswin-stage5: present ack win=1 seq=6062
+[02:57:53.633] crosswin-stage6: view move old-delta=[-46,-18] new-global=[227,35] pointer=[273,52]
+[02:57:53.633] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:53.633] crosswin-stage5: present win=1 seq=6063 global=[227,35 800x600] src=[797,0 3x600] dst=[0,35 3x600] visible=1
+[02:57:53.634] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:53.634] crosswin-stage5: present ack win=1 seq=6063
+[02:57:53.969] crosswin-stage6: view move old-delta=[-46,-18] new-global=[227,35] pointer=[273,52]
+[02:57:53.969] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:53.969] crosswin-stage5: present win=1 seq=6064 global=[227,35 800x600] src=[797,0 3x600] dst=[0,35 3x600] visible=1
+[02:57:53.970] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:53.970] crosswin-stage5: present ack win=1 seq=6064
+[02:57:53.999] crosswin-stage6: view move old-delta=[-46,-18] new-global=[226,35] pointer=[273,52]
+[02:57:53.999] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:53.999] crosswin-stage5: present win=1 seq=6065 global=[226,35 800x600] src=[798,0 2x600] dst=[0,35 2x600] visible=1
+[02:57:54.000] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:54.000] crosswin-stage5: present ack win=1 seq=6065
+[02:57:54.023] crosswin-stage6: view move old-delta=[-46,-18] new-global=[226,35] pointer=[272,52]
+[02:57:54.023] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:54.023] crosswin-stage5: present win=1 seq=6066 global=[226,35 800x600] src=[798,0 2x600] dst=[0,35 2x600] visible=1
+[02:57:54.023] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:54.024] crosswin-stage5: present ack win=1 seq=6066
+[02:57:54.053] crosswin-stage6: view move old-delta=[-46,-18] new-global=[225,34] pointer=[271,52]
+[02:57:54.053] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:54.053] crosswin-stage5: present win=1 seq=6067 global=[225,34 800x600] src=[799,0 1x600] dst=[0,34 1x600] visible=1
+[02:57:54.054] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:54.054] crosswin-stage5: present ack win=1 seq=6067
+[02:57:54.149] crosswin-stage6: view move old-delta=[-46,-18] new-global=[224,34] pointer=[271,52]
+[02:57:54.149] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:54.149] crosswin-stage5: present win=1 seq=6068 global=[224,34 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:54.150] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:54.150] crosswin-stage5: present ack win=1 seq=6068
+[02:57:54.165] crosswin-stage6: view move old-delta=[-46,-18] new-global=[224,34] pointer=[270,52]
+[02:57:54.165] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:54.165] crosswin-stage5: present win=1 seq=6069 global=[224,34 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:54.165] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:54.165] crosswin-stage5: present ack win=1 seq=6069
+[02:57:57.119] crosswin-stage6: view move old-delta=[-46,-18] new-global=[223,34] pointer=[269,52]
+[02:57:57.119] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:57.119] crosswin-stage5: present win=1 seq=6070 global=[223,34 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:57.120] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:57.120] crosswin-stage5: present ack win=1 seq=6070
+[02:57:57.127] crosswin-stage6: view move old-delta=[-46,-18] new-global=[222,34] pointer=[268,52]
+[02:57:57.127] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:57.127] crosswin-stage5: present win=1 seq=6071 global=[222,34 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:57.127] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:57.127] crosswin-stage5: present ack win=1 seq=6071
+[02:57:57.133] crosswin-stage6: view move old-delta=[-46,-18] new-global=[220,34] pointer=[266,52]
+[02:57:57.133] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:57.133] crosswin-stage5: present win=1 seq=6072 global=[220,34 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:57.133] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:57.133] crosswin-stage5: present ack win=1 seq=6072
+[02:57:57.141] crosswin-stage6: view move old-delta=[-46,-18] new-global=[218,34] pointer=[264,52]
+[02:57:57.141] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:57.141] crosswin-stage5: present win=1 seq=6073 global=[218,34 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:57.141] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:57.141] crosswin-stage5: present ack win=1 seq=6073
+[02:57:57.149] crosswin-stage6: view move old-delta=[-46,-18] new-global=[216,34] pointer=[262,52]
+[02:57:57.149] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:57.149] crosswin-stage5: present win=1 seq=6074 global=[216,34 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:57.149] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:57.149] crosswin-stage5: present ack win=1 seq=6074
+[02:57:57.157] crosswin-stage6: view move old-delta=[-46,-18] new-global=[215,34] pointer=[261,52]
+[02:57:57.157] crosswin-stage5: tx WINDOW_PRESENT bytes=56
+[02:57:57.157] crosswin-stage5: present win=1 seq=6075 global=[215,34 800x600] src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[02:57:57.157] crosswin-stage5: rx WINDOW_PRESENT_ACK bytes=16
+[02:57:57.157] crosswin-stage5: present ack win=1 seq=6075
+^C[02:58:04.352] caught signal 12

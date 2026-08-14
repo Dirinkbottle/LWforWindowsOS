@@ -1,19 +1,20 @@
-# CrossWin Stage 2–3 prototype
+# CrossWin Stage 2–7A prototype
 
 This directory adds the constrained TCP prototype on top of the Stage 1
-Geometry Oracle in `../geometry`.  It is intentionally limited to one remote
-output, one `WS_POPUP` proxy window, scale 1, a full top-down BGRA8888 frame,
-and TCP.  It contains no Wayland, GPU renderer, shared-memory transport, or
-multi-window policy.
+Geometry Oracle in `../geometry`.  It currently provides a single remote
+output, one `WS_POPUP` proxy window, scale 1, TCP, real Weston
+`xdg_toplevel + wl_shm` export, Linux-owned drag geometry, and persistent
+BGRA8888 framebuffers with incremental damage.  GPU/dmabuf, scene subtrees,
+multi-window policy and a high-performance transport remain later stages.
 
 ## Wire contract
 
-CWNP v1 has a fixed 24-byte header, explicitly serialized in little endian:
+CWNP v2 has a fixed 24-byte header, explicitly serialized in little endian:
 
 | Byte offset | Size | Field |
 | --- | ---: | --- |
 | 0 | 4 | magic (`CWNP`) |
-| 4 | 2 | protocol version (1) |
+| 4 | 2 | protocol version (2) |
 | 6 | 2 | message type |
 | 8 | 4 | flags |
 | 12 | 4 | payload length |
@@ -23,6 +24,15 @@ CWNP v1 has a fixed 24-byte header, explicitly serialized in little endian:
 handles arbitrary TCP fragmentation/coalescing and rejects bad magic/version,
 unknown mandatory messages, payloads over 64 MiB, invalid frame stride/size,
 and malformed presentation or pointer payloads.
+
+`WINDOW_FRAME` has the content version (`frame_sequence`) and is the initial
+full frame, fallback, and resynchronization mechanism. `WINDOW_DAMAGE` is an
+atomic collection of tightly-packed BGRA surface-local rectangles; its
+`base_frame_sequence` must equal the receiver's cached frame before the patch
+is applied. A mismatch causes `WINDOW_FRAME_REQUEST`, and Linux replies with a
+full `WINDOW_FRAME`. `WINDOW_RESIZE` replaces the persistent content buffer;
+it is followed by a full frame. Frame content versions and presentation
+versions are deliberately independent.
 
 `WINDOW_PRESENT` is atomic: it contains surface-local source rect,
 remote-output-local destination rect, visibility, and a presentation sequence.
@@ -44,8 +54,11 @@ dropped rather than reinterpreted using the newest presentation.
   places socket and HWND events on one UI thread.  It uses `WS_POPUP`, a
   top-down `StretchDIBits` DIB, signed `GET_X_LPARAM`, `ScreenToClient` for
   wheels, `TrackMouseEvent`, and mouse capture.
-- `tests/`: deterministic parser, session, scripted presentation TCP, and
-  pointer round-trip TCP tests.
+- `tests/`: deterministic parser, session, scripted presentation TCP, pointer
+  round-trip TCP, and Stage 7A damage/resync/CRC tests.
+
+详细的 Stage 7A 编译、Windows 视觉验证、静态拖动回归及本地自动失步恢复步骤见
+`../docs/stage7a-damage-test.txt`。
 
 ## Linux checks
 

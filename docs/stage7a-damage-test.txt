@@ -1,0 +1,115 @@
+Stage 7A：增量帧缓冲区 / Damage 验证（Windows 必测）
+===================================================
+
+本阶段把 CWNP 升级到 v2。`WINDOW_FRAME` 仍是初始完整帧、重连和失步恢复的
+后备；正常的同尺寸绘制更新使用 `WINDOW_DAMAGE`。窗口位置、裁剪和可见性仍只由
+`WINDOW_PRESENT` 表示，因此拖动窗口时不应产生新的像素消息。
+
+重要：Linux Weston 模块、`crosswin/common/protocol.[ch]` 与 Windows agent 必须来自
+同一次源码同步并重新编译。v1 agent 不能与 v2 exporter 互通。
+
+1. 编译
+---------
+
+Linux：
+
+    cd /home/inkbottle/othersrc/LWforWindowsOS
+    make -C crosswin all
+    ninja -C weston/build-stage4 \
+      frontend/weston desktop-shell/desktop-shell.so \
+      crosswin/crosswin-stage4.so crosswin/crosswin-stage7a-client
+
+Windows：在同步后的 `crosswin` 目录双击 `build-windows-agent.cmd`。成功后得到：
+
+    crosswin\build\crosswin-agent.exe
+
+2. 启动 Linux Weston 导出端
+-----------------------------
+
+以下命令使用嵌套 Weston 的 1024px 本地宽度。若你的父 Wayland socket 不是
+`wayland-0`，将第一行右侧替换为 `ls "$XDG_RUNTIME_DIR"/wayland-*` 看到的实际名称。
+`--crosswin-x` 是 Linux 本地输出的逻辑右边界，不是 Windows 虚机的分辨率。
+
+    export WAYLAND_DISPLAY=wayland-0
+    export CWROOT=/home/inkbottle/othersrc/LWforWindowsOS
+    export WESTON_MODULE_MAP="crosswin-stage4.so=$CWROOT/weston/build-stage4/crosswin/crosswin-stage4.so;wayland-backend.so=$CWROOT/weston/build-stage4/libweston/backend-wayland/wayland-backend.so;desktop-shell.so=$CWROOT/weston/build-stage4/desktop-shell/desktop-shell.so;weston-desktop-shell=$CWROOT/weston/build-stage4/clients/weston-desktop-shell;weston-keyboard=$CWROOT/weston/build-stage4/clients/weston-keyboard"
+    "$CWROOT/weston/build-stage4/frontend/weston" \
+      --socket=crosswin-stage7a \
+      --backend=wayland-backend.so \
+      --modules=crosswin-stage4.so \
+      --use-pixman --no-config \
+      --crosswin-x=1024 \
+      --crosswin-export --crosswin-port=44600 \
+      --crosswin-trace-protocol --crosswin-trace-present \
+      --crosswin-trace-frame --crosswin-trace-damage
+
+启动日志应包含：
+
+    crosswin-stage5: listening on 0.0.0.0:44600 (pointer seat=crosswin-proxy)
+
+3. 启动 Windows agent
+----------------------
+
+在 Windows `crosswin` 目录执行，将 IP 改成虚机可以访问的 Linux 主机地址：
+
+    build\crosswin-agent.exe --host 192.168.122.1 --port 44600 ^
+      --trace-protocol --trace-present --trace-frame --trace-damage
+
+应先看到：
+
+    [protocol rx] type=HELLO_ACK wire_seq=1 payload=8
+
+4. 运行确定性 damage client
+-----------------------------
+
+在 Linux 的另一终端执行：
+
+    export WAYLAND_DISPLAY=crosswin-stage7a
+    "$CWROOT/weston/build-stage4/crosswin/crosswin-stage7a-client" --run-ms 5000
+
+该 client 初始为 800x600 的棋盘图，并以 50ms 间隔移动一个 32x32 黄方块；第 6
+次提交会改为 640x480，随后继续移动。它每次提交都完成一次 Wayland round-trip，
+因此不会被客户端批量提交合并。
+
+通过条件：
+
+* Windows 先收到一条 `WINDOW_FRAME`，且 `[frame apply] ... full=1`；
+* 后续主要是 `WINDOW_DAMAGE` 和 `[damage apply]`，每条通常为四个小矩形，不能反复
+  接收约 1.92 MiB 的完整 800x600 帧；
+* Windows 显示的黄方块连续移动，图案无花屏或旧区域残留；
+* 尺寸变化时先出现 `WINDOW_RESIZE` 与 `[frame resize] ... 640x480`，紧接着是一条
+  完整帧，后续继续出现 damage；
+* Linux 日志中每次像素更新的 `frame=` 递增；仅 `present` 的序号会在拖动时递增，
+  两个序号并不要求相同。
+
+5. 静态拖动回归
+----------------
+
+关闭上述 moving-square client，按 `docs/stage6-windows-test.txt` 启动
+`crosswin-stage5-client` 并慢速或快速拖动十秒。启用本阶段的 trace 后，拖动前仅应
+有一次完整帧；拖动期间应持续出现 `WINDOW_PRESENT`，但不应出现 `WINDOW_DAMAGE` 或
+新的 `WINDOW_FRAME`。这证明位置更新没有触发内容复制。
+
+6. 自动失步恢复测试（Linux 本地）
+------------------------------------
+
+该测试不依赖 Windows 虚机，接收端会故意不应用第一条 damage，并在下一条的
+`base_frame_sequence` 不匹配时发送 `WINDOW_FRAME_REQUEST`。完整端到端检查命令：
+
+    cd /home/inkbottle/othersrc/LWforWindowsOS
+    # 先执行第 2 节的 Weston 命令，但把端口改成 44608、socket 改成 crosswin-stage7a-auto。
+    ./crosswin/build/stage7a-agent 44608
+    # 另一个终端：
+    WAYLAND_DISPLAY=crosswin-stage7a-auto \
+      ./weston/build-stage4/crosswin/crosswin-stage7a-client --run-ms 1000
+
+接收端最后必须打印：
+
+    stage7a damage/resync integration: PASS
+
+Weston 日志必须可见 `rx WINDOW_FRAME_REQUEST`，其后紧跟新的 `tx WINDOW_FRAME`。
+该自动测试还校验每次完整/增量重建后的 CRC32、多个矩形、丢帧恢复、resize 后完整帧
+及 resize 后继续 damage。
+
+失败时请同时提供 Linux Weston 完整日志、Windows agent 完整 stdout、实际
+`WAYLAND_DISPLAY`、`--crosswin-x` 和 IP/端口；不要只截取单条 protocol 日志。

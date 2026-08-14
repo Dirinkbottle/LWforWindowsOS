@@ -181,6 +181,16 @@ bool AgentProtocol::send_present_ack(std::uint64_t window_id,
                          static_cast<std::uint32_t>(payload.size()));
 }
 
+bool AgentProtocol::send_frame_request(std::uint64_t window_id,
+                                       std::uint64_t local_frame_sequence) {
+    std::array<std::uint8_t, 16U> payload{};
+
+    cw_store_u64_le(payload.data(), window_id);
+    cw_store_u64_le(payload.data() + 8U, local_frame_sequence);
+    return queue_message(CW_MESSAGE_WINDOW_FRAME_REQUEST, payload.data(),
+                         static_cast<std::uint32_t>(payload.size()));
+}
+
 bool AgentProtocol::send_pointer_location(CwMessageType type, const CwPointerLocation &location) {
     std::array<std::uint8_t, 40U> payload{};
 

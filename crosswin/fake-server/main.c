@@ -161,7 +161,7 @@ static bool send_create(Server *server) {
 
 static bool send_frame(Server *server) {
     const size_t pixel_bytes = (size_t)FAKE_SURFACE_STRIDE * FAKE_SURFACE_HEIGHT;
-    const size_t payload_length = 24U + pixel_bytes;
+    const size_t payload_length = 32U + pixel_bytes;
     uint8_t *payload;
     bool ok;
 
@@ -170,11 +170,12 @@ static bool send_frame(Server *server) {
         return false;
     }
     cw_store_u64_le(payload, server->session.window_id);
-    cw_store_u32_le(payload + 8U, FAKE_SURFACE_WIDTH);
-    cw_store_u32_le(payload + 12U, FAKE_SURFACE_HEIGHT);
-    cw_store_u32_le(payload + 16U, FAKE_SURFACE_STRIDE);
-    cw_store_u32_le(payload + 20U, CW_PIXEL_FORMAT_BGRA8888);
-    memcpy(payload + 24U, server->framebuffer, pixel_bytes);
+    cw_store_u64_le(payload + 8U, 1U);
+    cw_store_u32_le(payload + 16U, FAKE_SURFACE_WIDTH);
+    cw_store_u32_le(payload + 20U, FAKE_SURFACE_HEIGHT);
+    cw_store_u32_le(payload + 24U, FAKE_SURFACE_STRIDE);
+    cw_store_u32_le(payload + 28U, CW_PIXEL_FORMAT_BGRA8888);
+    memcpy(payload + 32U, server->framebuffer, pixel_bytes);
     ok = send_message(server, CW_MESSAGE_WINDOW_FRAME, payload, (uint32_t)payload_length);
     free(payload);
     return ok;

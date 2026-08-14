@@ -50,6 +50,7 @@ public:
 
     bool send_hello();
     bool send_present_ack(std::uint64_t window_id, std::uint64_t presentation_sequence);
+    bool send_frame_request(std::uint64_t window_id, std::uint64_t local_frame_sequence);
     bool send_pointer_location(CwMessageType type, const CwPointerLocation &location);
     bool send_pointer_motion(const CwPointerMotion &motion);
     bool send_pointer_button(const CwPointerButtonEvent &button);

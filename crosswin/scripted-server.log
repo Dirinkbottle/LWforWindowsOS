@@ -1,0 +1,14 @@
+fake-server listening on 127.0.0.1:44601 mode=stage2-script
+[present tx] win=1 seq=1 src=[0,0 800x600] dst=[300,200 800x600] visible=1
+[present ack] win=1 seq=1
+[present tx] win=1 seq=2 src=[100,0 700x600] dst=[0,200 700x600] visible=1
+[present ack] win=1 seq=2
+[present tx] win=1 seq=3 src=[220,0 580x600] dst=[0,300 580x600] visible=1
+[present ack] win=1 seq=3
+[present tx] win=1 seq=4 src=[400,100 400x400] dst=[200,100 400x400] visible=1
+[present ack] win=1 seq=4
+[present tx] win=1 seq=5 src=[0,0 0x0] dst=[0,0 0x0] visible=0
+[present ack] win=1 seq=5
+[present tx] win=1 seq=6 src=[0,0 800x600] dst=[300,200 800x600] visible=1
+[present ack] win=1 seq=6
+[script] Stage 2 presentation sequence acknowledged; sending destroy
