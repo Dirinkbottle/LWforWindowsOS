@@ -2,7 +2,7 @@
 #define CROSSWIN_PROTOCOL_H
 
 /*
- * CrossWin Network Protocol (CWNP), version 5.
+ * CrossWin Network Protocol (CWNP), version 6.
  *
  * Every integer is serialized explicitly in little-endian byte order.  No
  * native C/C++ struct is ever used as a wire message.  TCP is a byte stream:
@@ -19,13 +19,17 @@ extern "C" {
 
 enum {
     CW_PROTOCOL_MAGIC = 0x504E5743U, /* Wire bytes: 'C', 'W', 'N', 'P'. */
-    CW_PROTOCOL_VERSION = 5U,
+    CW_PROTOCOL_VERSION = 6U,
     CW_HEADER_SIZE = 24U,
     CW_MAX_PAYLOAD = 64U * 1024U * 1024U,
     CW_PIXEL_FORMAT_BGRA8888 = 1U,
     CW_PIXEL_FORMAT_MASK_BGRA8888 = 1U << 0,
     CW_MAX_SURFACE_DIMENSION = 16384U,
     CW_MAX_DAMAGE_RECTS = 256U,
+    /* Linux input-event-codes.h defines KEY_MAX as 0x2ff. Keep the shared
+     * protocol independent from Linux headers while rejecting nonsense on
+     * either peer before it reaches an input backend. */
+    CW_MAX_LINUX_KEYCODE = 0x2ffU,
     CW_OPTIONAL_MESSAGE_BIT = 0x8000U,
 };
 
@@ -50,6 +54,11 @@ typedef enum {
     CW_MESSAGE_POINTER_BUTTON = 33,
     CW_MESSAGE_POINTER_WHEEL = 34,
     CW_MESSAGE_POINTER_CAPTURE_LOST = 35,
+    /* Window-scoped keyboard forwarding. This is not a Deskflow replacement:
+     * the Windows Agent emits these only while a Crosswin proxy HWND owns the
+     * Win32 keyboard focus. `key` uses Linux evdev key-code values. */
+    CW_MESSAGE_KEYBOARD_FOCUS = 36,
+    CW_MESSAGE_KEYBOARD_KEY = 37,
 } CwMessageType;
 
 typedef enum {
@@ -62,6 +71,11 @@ typedef enum {
     CW_BUTTON_RELEASED = 0,
     CW_BUTTON_PRESSED = 1,
 } CwButtonState;
+
+typedef enum {
+    CW_KEY_RELEASED = 0,
+    CW_KEY_PRESSED = 1,
+} CwKeyState;
 
 typedef struct {
     uint32_t magic;
@@ -209,6 +223,18 @@ typedef struct {
     uint64_t timestamp_ms;
 } CwPointerCaptureLost;
 
+typedef struct {
+    uint64_t window_id;
+    bool focused;
+} CwKeyboardFocus;
+
+typedef struct {
+    uint64_t window_id;
+    uint32_t key;
+    uint32_t state;
+    uint64_t timestamp_ms;
+} CwKeyboardKey;
+
 typedef enum {
     CW_DECODER_OK = 0,
     CW_DECODER_BAD_ARGUMENT,
@@ -307,6 +333,8 @@ bool cw_decode_pointer_button(
 bool cw_decode_pointer_wheel(const uint8_t *payload, uint32_t length, CwPointerWheel *out);
 bool cw_decode_pointer_capture_lost(
     const uint8_t *payload, uint32_t length, CwPointerCaptureLost *out);
+bool cw_decode_keyboard_focus(const uint8_t *payload, uint32_t length, CwKeyboardFocus *out);
+bool cw_decode_keyboard_key(const uint8_t *payload, uint32_t length, CwKeyboardKey *out);
 
 #ifdef __cplusplus
 }

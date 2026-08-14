@@ -1,11 +1,12 @@
 # CrossWin：编译、运行与验证教程
 
-本仓库已完成 Stage 1～7D：Linux Weston 保有窗口、位置、激活和拖动的 canonical
+本仓库已完成 Stage 1～7D，以及 Stage 8/9 的 proxy 窗口内键盘、滚轮和低延迟
+presentation 合并：Linux Weston 保有窗口、位置、激活和拖动的 canonical
 state；Windows Agent 为每个 Linux toplevel/popup 创建独立原生 HWND，通过 TCP
 接收 framebuffer、damage 与 presentation，并把鼠标事件回传 Linux。
 
 当前支持 wl_shm、subsurface、alpha、popup、多窗口生命周期、Linux-owned drag、
-CWNP v5 以及有理数逻辑→物理 DPI presentation。GPU/dmabuf、共享内存高性能传输
+CWNP v6 以及有理数逻辑→物理 DPI presentation。GPU/dmabuf、共享内存高性能传输
 和最终压力恢复仍属后续阶段。
 
 ## 目录说明
@@ -13,7 +14,7 @@ CWNP v5 以及有理数逻辑→物理 DPI presentation。GPU/dmabuf、共享内
 ```text
 geometry/                  Stage 1：纯 C11 Geometry Oracle
 crosswin/
-├── common/                CWNP v5 显式 little-endian 协议与 stream decoder
+├── common/                CWNP v6 显式 little-endian 协议与 stream decoder
 ├── fake-server/           Linux TCP fake server、测试图案、presentation history
 ├── windows-agent/         C++17 Win32 + Winsock + GDI proxy HWND
 ├── tests/                 协议、presentation、pointer round-trip 测试
@@ -76,6 +77,8 @@ input-agent       Stage 3 自动 TCP client
 make -C crosswin test
 make -C crosswin integration
 make -C crosswin input-integration
+make -C crosswin stage7d-integration
+make -C crosswin stage8-integration
 make -C crosswin sanitize
 ```
 
@@ -330,9 +333,10 @@ client + source origin = surface
 - 目前只有一个 remote Windows output；它可以放在 Linux logical desktop 的 right、
   left、above 或 below。
 - Wayland export 仍限支持的 wl_shm 场景；GPU/dmabuf 在 Stage 7E 实现。
-- 没有键盘/IME、剪贴板、视频编码或跨系统鼠标 ownership；Deskflow 仍负责物理
-  键盘/鼠标跨机。
+- 已支持**获焦 Crosswin proxy HWND** 的窗口内键盘和滚轮；IME、剪贴板、视频编码
+  和跨系统鼠标 ownership 仍未实现。Deskflow 仍负责物理键盘/鼠标跨机。
 - 这不是 production transport：没有 TLS、认证、重连协议或 damage/frame compression。
 
 详细协议、测试结构和 Windows 视觉检查说明也见 [crosswin/README.md](crosswin/README.md)。
 Stage 7D 的完整中文命令和 Windows Gate 见 [docs/stage7d-dpi-test.txt](docs/stage7d-dpi-test.txt)。
+Stage 8/9 的键盘、滚轮和连续拖动 Gate 见 [docs/stage8-input-stage9-present-test.txt](docs/stage8-input-stage9-present-test.txt)。

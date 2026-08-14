@@ -1,0 +1,143 @@
+Stage 8 / 9：Windows 窗口内键盘、滚轮与连续拖动验证
+=====================================================
+
+范围
+----
+
+本轮修复只处理 Crosswin proxy HWND 自己的窗口语义：
+
+* Windows proxy 获得 Win32 键盘焦点后，发送对应 Linux Wayland 窗口的按键；
+* Windows `WM_MOUSEWHEEL` / `WM_MOUSEHWHEEL` 转成 Wayland axis；
+* 高频 `WINDOW_PRESENT` 在 Windows Agent 中按窗口合并，只绘制最新位置，避免
+  拖动时积压旧的 GDI `UpdateLayeredWindow`；
+* 断线、失焦、窗口销毁时释放所有已按下的键，避免 Linux 客户端卡住 Ctrl/Alt/Shift。
+
+这**不**接管 Deskflow。只有 Crosswin proxy HWND 已获焦时才转发按键；焦点离开
+该窗口立即停止。物理键盘/鼠标跨 Linux 与 Windows 桌面的全局切换仍由 Deskflow
+负责。
+
+协议已升级到 CWNP v6。Linux Weston 模块、`crosswin/common/`、Windows Agent 三者
+必须来自同一份源码并重新编译；旧 v5 Agent 会在 HELLO 阶段被拒绝。
+
+一、Linux 自动验证（已可本机执行）
+--------------------------------------
+
+在仓库根目录执行：
+
+    make -C crosswin all test integration input-integration stage7d-integration
+    ninja -C weston/build-stage4 \
+      crosswin/crosswin-stage4.so crosswin/crosswin-stage5-client
+    export WAYLAND_DISPLAY=wayland-0       # 若实际 socket 不同，以 ls 结果替换
+    make -C crosswin stage8-integration
+
+最后一项会启动嵌套 Weston、一个协议测试 Agent 和真实 Wayland client，自动注入：
+
+    POINTER_WHEEL(-120)
+    KEYBOARD_FOCUS(window=1, true)
+    KEY_A press
+    KEY_A release
+
+成功标志：
+
+    stage8 window-scoped keyboard/wheel integration: PASS
+
+脚本同时检查 Weston trace 中的 `event=wheel ... delivered` 和
+`event=keyboard-key ... key=30 state=1`。该项不需要 Windows 虚机。
+
+二、Windows 必测
+----------------
+
+### 1. 编译最新 Agent
+
+把仓库中的 `crosswin/` 与 `geometry/` 同步到 Windows，再在资源管理器双击：
+
+    crosswin\build-windows-agent.cmd
+
+或在 x64 Native Tools Command Prompt 中运行该脚本。成功产物为：
+
+    crosswin\build\crosswin-agent.exe
+
+### 2. 启动一个完整位于 Windows remote output 的测试窗口
+
+Linux 终端 A（宿主 Wayland socket 若不是 `wayland-0` 请替换）：
+
+    export CWROOT=/home/inkbottle/othersrc/LWforWindowsOS
+    export WAYLAND_DISPLAY=wayland-0
+    export WESTON_MODULE_MAP="crosswin-stage4.so=$CWROOT/weston/build-stage4/crosswin/crosswin-stage4.so;wayland-backend.so=$CWROOT/weston/build-stage4/libweston/backend-wayland/wayland-backend.so;desktop-shell.so=$CWROOT/weston/build-stage4/desktop-shell/desktop-shell.so;weston-desktop-shell=$CWROOT/weston/build-stage4/clients/weston-desktop-shell;weston-keyboard=$CWROOT/weston/build-stage4/clients/weston-keyboard"
+
+    WESTON_MODULE_MAP="$WESTON_MODULE_MAP" \
+      "$CWROOT/weston/build-stage4/frontend/weston" \
+      --socket=crosswin-stage8-win --backend=wayland-backend.so \
+      --modules=crosswin-stage4.so --use-pixman --no-config \
+      --crosswin-x=1024 --crosswin-y=0 \
+      --crosswin-export --crosswin-port=44600 \
+      --crosswin-trace-protocol --crosswin-trace-present --crosswin-trace-input
+
+这里的 `1024` 是嵌套 Linux 输出的逻辑宽度，所以 remote output 位于其右侧；它不是
+Windows 物理分辨率。真实宿主请填 Linux 本地输出在 global logical desktop 中的右
+边界，例如本地输出为 `[0,0 2560x1600]` 时填 `--crosswin-x=2560`。
+
+Windows CMD：
+
+    build\crosswin-agent.exe --host 192.168.122.1 --port 44600 ^
+      --trace-protocol --trace-present --trace-input
+
+Linux 终端 B：
+
+    WAYLAND_DISPLAY=crosswin-stage8-win \
+      "$CWROOT/weston/build-stage4/crosswin/crosswin-stage5-client" --run-ms 120000
+
+窗口顶部橙色 32px 区域是测试拖动条。
+
+### 3. 键盘 Gate
+
+1. 在 Windows 的 Crosswin 窗口中单击一次非橙色区域；
+2. 让鼠标留在窗口内，按 `A`、`Shift+A`、方向键、Backspace；
+3. Linux 终端 A 必须出现例如：
+
+       crosswin-stage8: ... event=keyboard-focus win=1 focused=1
+       crosswin-stage8: ... event=keyboard-key win=1 key=30 state=1
+       crosswin-stage8: ... event=keyboard-key win=1 key=30 state=0
+
+4. 点击普通 Windows 程序后再按 A；Linux 日志不应继续出现 Crosswin keyboard-key。
+
+`crosswin-stage5-client` 会在收到 `KEY_A` 时于终端 B 打印：
+
+    crosswin-stage8-client: key=KEY_A state=pressed
+
+这证明事件到达真实 Wayland client，而不只是停在 Weston trace。
+
+### 4. 滚轮 Gate
+
+1. 把鼠标放在 Windows proxy client area；
+2. 上下各滚动数格，并按住 Shift 测试横向滚轮（若鼠标支持）；
+3. Linux 终端 A 应有 `event=wheel ... delivered`；终端 B 应有：
+
+       crosswin-stage8-client: wheel axis=0 value=...
+
+滚轮方向应和 Windows 预期一致。若出现 trace 但 client 没有 axis，确认 Windows
+Agent 不是旧 v5 可执行文件，且鼠标确实位于可见 fragment 内。
+
+### 5. 连续拖动 Gate
+
+1. 在 Windows 窗口顶部橙色条按住左键；
+2. 保持按住至少 3 秒，匀速向左/右移动，途中跨过 Linux/Windows 边界；
+3. Windows 窗口必须在**按住期间**连续移动，不能只在松开时跳到最终位置；
+4. Agent 的 `--trace-present` 应在按住期间持续打印 `[present apply]`。快速移动时
+   出现 `[present coalesce]` 是正常的：它说明旧位置被丢弃、最新 Linux canonical
+   位置优先呈现；
+5. Linux trace 应有多条 `tx WINDOW_PRESENT`，而静态测试 client 不提交新 buffer，
+   不应因移动本身反复产生 `WINDOW_FRAME` / `WINDOW_DAMAGE`。
+
+通过条件
+----------
+
+以下全部成立才可标记本轮输入/响应性 Gate 通过：
+
+    STAGE 8/9 PASS
+
+* `stage8-integration` 自动 PASS；
+* Windows proxy 获焦后键盘到达实际 Wayland client，失焦后停止；
+* Windows wheel 到达实际 Wayland client；
+* 拖动按住期间连续可见，快速移动没有“只在松开后跳变”；
+* 拖过 remote output 外边缘不会崩溃，按键不会在断链/失焦后卡住。

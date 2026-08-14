@@ -20,6 +20,53 @@ std::uint64_t timestamp_ms() {
     return static_cast<std::uint64_t>(GetTickCount64());
 }
 
+/* Win32 set-1 scan codes match the Linux evdev values for the normal 101/102
+ * key block. E0-prefixed keys occupy their Linux extended positions instead.
+ * The wire protocol intentionally carries Linux key codes: Weston can then
+ * feed its normal keyboard path and Wayland clients keep their native xkb
+ * layout/repeat handling. */
+bool windows_key_to_linux_evdev(WPARAM virtual_key, LPARAM lparam, std::uint32_t *out) {
+    const std::uint32_t scan_code = (static_cast<std::uint32_t>(lparam) >> 16U) & 0xffU;
+    const bool extended = (static_cast<std::uintptr_t>(lparam) & (UINT_PTR(1) << 24U)) != 0U;
+
+    if (out == nullptr) {
+        return false;
+    }
+    if (virtual_key == VK_PAUSE) {
+        *out = 119U; /* KEY_PAUSE */
+        return true;
+    }
+    if (extended) {
+        switch (scan_code) {
+        case 0x1cU: *out = 96U; return true;  /* KEY_KPENTER */
+        case 0x1dU: *out = 97U; return true;  /* KEY_RIGHTCTRL */
+        case 0x35U: *out = 98U; return true;  /* KEY_KPSLASH */
+        case 0x37U: *out = 99U; return true;  /* KEY_SYSRQ */
+        case 0x38U: *out = 100U; return true; /* KEY_RIGHTALT */
+        case 0x47U: *out = 102U; return true; /* KEY_HOME */
+        case 0x48U: *out = 103U; return true; /* KEY_UP */
+        case 0x49U: *out = 104U; return true; /* KEY_PAGEUP */
+        case 0x4bU: *out = 105U; return true; /* KEY_LEFT */
+        case 0x4dU: *out = 106U; return true; /* KEY_RIGHT */
+        case 0x4fU: *out = 107U; return true; /* KEY_END */
+        case 0x50U: *out = 108U; return true; /* KEY_DOWN */
+        case 0x51U: *out = 109U; return true; /* KEY_PAGEDOWN */
+        case 0x52U: *out = 110U; return true; /* KEY_INSERT */
+        case 0x53U: *out = 111U; return true; /* KEY_DELETE */
+        case 0x5bU: *out = 125U; return true; /* KEY_LEFTMETA */
+        case 0x5cU: *out = 126U; return true; /* KEY_RIGHTMETA */
+        case 0x5dU: *out = 127U; return true; /* KEY_COMPOSE */
+        default:
+            return false;
+        }
+    }
+    if (scan_code == 0U || scan_code > 0x58U) {
+        return false;
+    }
+    *out = scan_code;
+    return true;
+}
+
 } // namespace
 
 ProxyWindow::ProxyWindow()
@@ -36,6 +83,8 @@ ProxyWindow::ProxyWindow()
       output_scale_{1U, 1U},
       physical_destination_{},
       pressed_button_mask_(0U),
+      pressed_keys_{},
+      keyboard_focused_(false),
       tracking_mouse_(false),
       trace_input_(false),
       trace_frame_(false),
@@ -72,6 +121,8 @@ bool ProxyWindow::create(HINSTANCE instance, AgentProtocol *protocol, HWND owner
 }
 
 void ProxyWindow::destroy() {
+    release_pressed_keys();
+    send_keyboard_focus(false);
     if (hwnd_ != nullptr) {
         DestroyWindow(hwnd_);
         hwnd_ = nullptr;
@@ -80,6 +131,8 @@ void ProxyWindow::destroy() {
     window_id_ = 0U;
     frame_sequence_ = 0U;
     pressed_button_mask_ = 0U;
+    pressed_keys_.clear();
+    keyboard_focused_ = false;
     tracking_mouse_ = false;
     is_popup_ = false;
     physical_destination_ = Rect{};
@@ -411,6 +464,8 @@ bool ProxyWindow::apply_destroy(std::uint64_t window_id) {
     if (GetCapture() == hwnd_) {
         ReleaseCapture();
     }
+    release_pressed_keys();
+    send_keyboard_focus(false);
     pressed_button_mask_ = 0U;
     tracking_mouse_ = false;
     framebuffer_.clear();
@@ -529,7 +584,7 @@ void ProxyWindow::send_button(UINT message, WPARAM wparam, LPARAM lparam) {
     (void)protocol_->send_pointer_button(event);
 }
 
-void ProxyWindow::send_wheel(WPARAM wparam, LPARAM lparam) {
+void ProxyWindow::send_wheel(UINT message, WPARAM wparam, LPARAM lparam) {
     POINT screen{GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
     POINT client = screen;
     CwPointerWheel wheel{};
@@ -540,13 +595,70 @@ void ProxyWindow::send_wheel(WPARAM wparam, LPARAM lparam) {
             &wheel.location)) {
         return;
     }
-    wheel.delta_x = 0;
-    wheel.delta_y = GET_WHEEL_DELTA_WPARAM(wparam);
+    wheel.delta_x = message == WM_MOUSEHWHEEL ? GET_WHEEL_DELTA_WPARAM(wparam) : 0;
+    wheel.delta_y = message == WM_MOUSEWHEEL ? GET_WHEEL_DELTA_WPARAM(wparam) : 0;
     trace_location("POINTER_WHEEL", wheel.location);
     if (trace_input_) {
         std::printf("[input tx] wheel=[%d,%d]\n", wheel.delta_x, wheel.delta_y);
     }
     (void)protocol_->send_pointer_wheel(wheel);
+}
+
+void ProxyWindow::send_keyboard_focus(bool focused) {
+    CwKeyboardFocus focus{};
+
+    if (is_popup_ || window_id_ == 0U || protocol_ == nullptr ||
+        keyboard_focused_ == focused) {
+        return;
+    }
+    keyboard_focused_ = focused;
+    focus.window_id = window_id_;
+    focus.focused = focused;
+    if (trace_input_) {
+        std::printf("[input tx] type=KEYBOARD_FOCUS win=%llu focused=%u\n",
+                    static_cast<unsigned long long>(focus.window_id),
+                    focus.focused ? 1U : 0U);
+    }
+    (void)protocol_->send_keyboard_focus(focus);
+}
+
+void ProxyWindow::send_key(UINT message, WPARAM wparam, LPARAM lparam) {
+    CwKeyboardKey key{};
+    const bool pressed = message == WM_KEYDOWN || message == WM_SYSKEYDOWN;
+
+    if (is_popup_ || !keyboard_focused_ || protocol_ == nullptr ||
+        !windows_key_to_linux_evdev(wparam, lparam, &key.key)) {
+        return;
+    }
+    key.window_id = window_id_;
+    key.state = pressed ? CW_KEY_PRESSED : CW_KEY_RELEASED;
+    key.timestamp_ms = timestamp_ms();
+    if (pressed) {
+        pressed_keys_.insert(key.key);
+    } else if (pressed_keys_.erase(key.key) == 0U) {
+        return; /* Do not synthesize a release without a matching press. */
+    }
+    if (trace_input_) {
+        std::printf("[input tx] type=KEYBOARD_KEY win=%llu key=%u state=%u\n",
+                    static_cast<unsigned long long>(key.window_id), key.key, key.state);
+    }
+    (void)protocol_->send_keyboard_key(key);
+}
+
+void ProxyWindow::release_pressed_keys() {
+    if (protocol_ == nullptr || window_id_ == 0U) {
+        pressed_keys_.clear();
+        return;
+    }
+    for (const std::uint32_t key_code : pressed_keys_) {
+        const CwKeyboardKey key{window_id_, key_code, CW_KEY_RELEASED, timestamp_ms()};
+        if (trace_input_) {
+            std::printf("[input tx] type=KEYBOARD_KEY win=%llu key=%u state=0 recovery=focus-loss\n",
+                        static_cast<unsigned long long>(key.window_id), key.key);
+        }
+        (void)protocol_->send_keyboard_key(key);
+    }
+    pressed_keys_.clear();
 }
 
 void ProxyWindow::paint(HDC dc) {
@@ -615,10 +727,30 @@ LRESULT ProxyWindow::handle_message(UINT message, WPARAM wparam, LPARAM lparam) 
     case WM_RBUTTONUP:
     case WM_MBUTTONDOWN:
     case WM_MBUTTONUP:
+        if (message == WM_LBUTTONDOWN || message == WM_RBUTTONDOWN ||
+            message == WM_MBUTTONDOWN) {
+            /* A popup is deliberately non-activating; keep text input owned
+             * by its top-level Linux parent in that case. */
+            (void)SetFocus(is_popup_ ? GetWindow(hwnd_, GW_OWNER) : hwnd_);
+        }
         send_button(message, wparam, lparam);
         return 0;
     case WM_MOUSEWHEEL:
-        send_wheel(wparam, lparam);
+    case WM_MOUSEHWHEEL:
+        send_wheel(message, wparam, lparam);
+        return 0;
+    case WM_SETFOCUS:
+        send_keyboard_focus(true);
+        return 0;
+    case WM_KILLFOCUS:
+        release_pressed_keys();
+        send_keyboard_focus(false);
+        return 0;
+    case WM_KEYDOWN:
+    case WM_KEYUP:
+    case WM_SYSKEYDOWN:
+    case WM_SYSKEYUP:
+        send_key(message, wparam, lparam);
         return 0;
     case WM_CAPTURECHANGED:
         if (pressed_button_mask_ != 0U) {

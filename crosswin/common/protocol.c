@@ -23,6 +23,8 @@ enum {
     CW_POINTER_BUTTON_PAYLOAD_SIZE = 48U,
     CW_POINTER_WHEEL_PAYLOAD_SIZE = 48U,
     CW_POINTER_CAPTURE_LOST_PAYLOAD_SIZE = 24U,
+    CW_KEYBOARD_FOCUS_PAYLOAD_SIZE = 16U,
+    CW_KEYBOARD_KEY_PAYLOAD_SIZE = 24U,
 };
 
 static void set_error(CwDecoderError *out, CwDecoderError error) {
@@ -72,6 +74,8 @@ bool cw_message_type_is_known(uint16_t type) {
     case CW_MESSAGE_POINTER_BUTTON:
     case CW_MESSAGE_POINTER_WHEEL:
     case CW_MESSAGE_POINTER_CAPTURE_LOST:
+    case CW_MESSAGE_KEYBOARD_FOCUS:
+    case CW_MESSAGE_KEYBOARD_KEY:
         return true;
     default:
         return false;
@@ -120,6 +124,10 @@ const char *cw_message_type_name(uint16_t type) {
         return "POINTER_WHEEL";
     case CW_MESSAGE_POINTER_CAPTURE_LOST:
         return "POINTER_CAPTURE_LOST";
+    case CW_MESSAGE_KEYBOARD_FOCUS:
+        return "KEYBOARD_FOCUS";
+    case CW_MESSAGE_KEYBOARD_KEY:
+        return "KEYBOARD_KEY";
     default:
         return cw_message_type_is_optional(type) ? "OPTIONAL_UNKNOWN" : "UNKNOWN";
     }
@@ -365,6 +373,26 @@ static bool valid_pointer_button_payload(const uint8_t *payload, uint32_t length
            (state == CW_BUTTON_RELEASED || state == CW_BUTTON_PRESSED);
 }
 
+static bool valid_keyboard_focus_payload(const uint8_t *payload, uint32_t length) {
+    if (payload == NULL || length != CW_KEYBOARD_FOCUS_PAYLOAD_SIZE) {
+        return false;
+    }
+    return cw_load_u64_le(payload) != 0U &&
+           (cw_load_u32_le(payload + 8U) == 0U ||
+            cw_load_u32_le(payload + 8U) == 1U) &&
+           cw_load_u32_le(payload + 12U) == 0U;
+}
+
+static bool valid_keyboard_key_payload(const uint8_t *payload, uint32_t length) {
+    if (payload == NULL || length != CW_KEYBOARD_KEY_PAYLOAD_SIZE) {
+        return false;
+    }
+    return cw_load_u64_le(payload) != 0U &&
+           cw_load_u32_le(payload + 8U) <= CW_MAX_LINUX_KEYCODE &&
+           (cw_load_u32_le(payload + 12U) == CW_KEY_RELEASED ||
+            cw_load_u32_le(payload + 12U) == CW_KEY_PRESSED);
+}
+
 bool cw_message_is_valid(const CwHeader *header, const uint8_t *payload) {
     if (!cw_header_is_valid(header, NULL)) {
         return false;
@@ -427,6 +455,10 @@ bool cw_message_is_valid(const CwHeader *header, const uint8_t *payload) {
         return header->payload_length == CW_POINTER_WHEEL_PAYLOAD_SIZE;
     case CW_MESSAGE_POINTER_CAPTURE_LOST:
         return header->payload_length == CW_POINTER_CAPTURE_LOST_PAYLOAD_SIZE;
+    case CW_MESSAGE_KEYBOARD_FOCUS:
+        return valid_keyboard_focus_payload(payload, header->payload_length);
+    case CW_MESSAGE_KEYBOARD_KEY:
+        return valid_keyboard_key_payload(payload, header->payload_length);
     default:
         return false;
     }
@@ -877,5 +909,28 @@ bool cw_decode_pointer_capture_lost(
     }
     *out = (CwPointerCaptureLost){cw_load_u64_le(payload), cw_load_u64_le(payload + 8U),
                                   cw_load_u64_le(payload + 16U)};
+    return true;
+}
+
+bool cw_decode_keyboard_focus(const uint8_t *payload, uint32_t length,
+                              CwKeyboardFocus *out)
+{
+    if (!valid_keyboard_focus_payload(payload, length) || out == NULL) {
+        return false;
+    }
+    *out = (CwKeyboardFocus){cw_load_u64_le(payload),
+                             cw_load_u32_le(payload + 8U) != 0U};
+    return true;
+}
+
+bool cw_decode_keyboard_key(const uint8_t *payload, uint32_t length,
+                            CwKeyboardKey *out)
+{
+    if (!valid_keyboard_key_payload(payload, length) || out == NULL) {
+        return false;
+    }
+    *out = (CwKeyboardKey){cw_load_u64_le(payload), cw_load_u32_le(payload + 8U),
+                           cw_load_u32_le(payload + 12U),
+                           cw_load_u64_le(payload + 16U)};
     return true;
 }

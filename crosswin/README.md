@@ -1,4 +1,4 @@
-# CrossWin Stage 2–7D prototype
+# CrossWin Stage 2–7D + 8/9 prototype
 
 This directory adds the constrained TCP prototype on top of the Stage 1
 Geometry Oracle in `../geometry`. It currently provides a single remote
@@ -6,17 +6,19 @@ output, TCP, real Weston `xdg_toplevel + xdg_popup + wl_shm` export,
 Linux-owned drag geometry, scene-subtree composition (subsurface/alpha),
 per-pixel-alpha Windows proxy HWNDs, persistent BGRA8888 framebuffers with
 incremental damage, independent multi-window lifecycle/activation ordering,
-and rational logical-to-physical Windows presentation scaling. GPU/dmabuf and
-a high-performance transport remain later stages.
+and rational logical-to-physical Windows presentation scaling. It also has
+window-scoped keyboard forwarding, wheel forwarding, focused-key recovery, and
+latest-presentation coalescing for responsive proxy dragging. GPU/dmabuf and a
+high-performance transport remain later stages.
 
 ## Wire contract
 
-CWNP v5 has a fixed 24-byte header, explicitly serialized in little endian:
+CWNP v6 has a fixed 24-byte header, explicitly serialized in little endian:
 
 | Byte offset | Size | Field |
 | --- | ---: | --- |
 | 0 | 4 | magic (`CWNP`) |
-| 4 | 2 | protocol version (5) |
+| 4 | 2 | protocol version (6) |
 | 6 | 2 | message type |
 | 8 | 4 | flags |
 | 12 | 4 | payload length |
@@ -66,6 +68,17 @@ last 64 presentation states and maps `client -> surface` with
 `presented_fragment_to_surface_local()` from Stage 1.  A stale sequence is
 dropped rather than reinterpreted using the newest presentation.
 
+`KEYBOARD_FOCUS { window_id, focused }` and `KEYBOARD_KEY { window_id, evdev
+key, state, timestamp }` are emitted only when a non-popup Crosswin HWND owns
+Win32 focus. Weston injects them through its dedicated `crosswin-proxy` seat,
+so the target Wayland client uses its normal xkb processing. `POINTER_WHEEL`
+maps to Wayland wheel axes. This deliberately does not replace Deskflow or
+forward global desktop input.
+
+The Agent queues `WINDOW_PRESENT` to the UI message loop and keeps only the
+latest pending state per window. ACK is sent only for a state actually applied;
+older drag positions may be skipped rather than replayed through expensive GDI.
+
 ## Components
 
 - `common/`: explicit wire codec, decoder, and BGRA pixel declaration.
@@ -83,7 +96,8 @@ dropped rather than reinterpreted using the newest presentation.
 详细的 Stage 7A 验证见 `../docs/stage7a-damage-test.txt`；Stage 7B 的 Linux
 自动验证和 Windows 必测步骤见 `../docs/stage7b-scene-popup-test.txt`；Stage
 7C 的多窗口/生命周期验证见 `../docs/stage7c-multiwindow-test.txt`；Stage 7D 的
-DPI、缩放、输出位置验证见 `../docs/stage7d-dpi-test.txt`。
+DPI、缩放、输出位置验证见 `../docs/stage7d-dpi-test.txt`；Stage 8/9 的键盘、滚轮和
+拖动响应性验证见 `../docs/stage8-input-stage9-present-test.txt`。
 
 ## Linux checks
 
@@ -92,6 +106,7 @@ make test
 make integration
 make input-integration
 make stage7d-integration
+make stage8-integration
 make sanitize
 ```
 

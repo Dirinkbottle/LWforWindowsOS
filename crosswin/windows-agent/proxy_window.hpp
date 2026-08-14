@@ -7,6 +7,7 @@
 #include <windows.h>
 
 #include <cstdint>
+#include <unordered_set>
 #include <vector>
 
 /* One Linux-owned proxy HWND. Popups use their parent HWND as a non-activating
@@ -44,7 +45,10 @@ private:
     bool current_cursor_location(CwPointerLocation *location) const;
     void trace_location(const char *event, const CwPointerLocation &location) const;
     void send_button(UINT message, WPARAM wparam, LPARAM lparam);
-    void send_wheel(WPARAM wparam, LPARAM lparam);
+    void send_wheel(UINT message, WPARAM wparam, LPARAM lparam);
+    void send_keyboard_focus(bool focused);
+    void send_key(UINT message, WPARAM wparam, LPARAM lparam);
+    void release_pressed_keys();
     bool request_frame_resync(const char *reason);
     bool update_layered_window();
     void paint(HDC dc);
@@ -62,6 +66,8 @@ private:
     Scale output_scale_;
     Rect physical_destination_;
     std::uint32_t pressed_button_mask_;
+    std::unordered_set<std::uint32_t> pressed_keys_;
+    bool keyboard_focused_;
     bool tracking_mouse_;
     bool trace_input_;
     bool trace_frame_;

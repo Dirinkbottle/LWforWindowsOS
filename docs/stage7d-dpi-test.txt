@@ -8,7 +8,7 @@ Weston 的 global desktop 始终使用**逻辑坐标**。`--crosswin-x`、
 `--crosswin-y`、`WINDOW_PRESENT.destination_*`、Linux 端 pointer input 都是
 逻辑坐标，绝不能填 Windows 的物理像素数。
 
-CWNP v5 在 HELLO_ACK 后、任何 WINDOW_CREATE 前发送：
+CWNP v6 在 HELLO_ACK 后、任何 WINDOW_CREATE 前发送：
 
     OUTPUT_CONFIG {
       logical_global = [x, y width x height],
@@ -52,6 +52,8 @@ Crosswin 内容做兼容性二次缩放。需要 Windows 10 1703 或更新版本
 * 1/1、5/4、3/2、2/1 有理缩放配置；
 * right、left 两个方向的真实 `xdg_toplevel.move`，包括 50/50、1px、隐藏和恢复；
 * `OUTPUT_CONFIG` 的发送顺序与比例。
+* Windows capture 拖过所有已启用输出的外边界：坐标收敛到最近的有效逻辑像素，
+  且重复 motion 不会重复发送相同的 `WINDOW_PRESENT`。
 
 上下方向的 1px/50/50 使用精确的 Linux-owned initial logical geometry。
 这样不会被 desktop-shell 为普通 toplevel 保留可见标题栏的策略干扰，测试的是
@@ -60,7 +62,7 @@ Crosswin 内容做兼容性二次缩放。需要 Windows 10 1703 或更新版本
 二、Windows 必测（Stage 7D Gate）
 ---------------------------------
 
-### 1. 同步并编译 v5 Agent
+### 1. 同步并编译 v6 Agent
 
 把最新的 `crosswin/` 和 `geometry/` 都同步到 Windows 仓库副本。在
 `crosswin` 目录双击：
@@ -68,7 +70,7 @@ Crosswin 内容做兼容性二次缩放。需要 Windows 10 1703 或更新版本
     build-windows-agent.cmd
 
 脚本现在会编译 `common\protocol.c` **以及** `..\geometry\geometry.c`。旧的
-CWNP v4 exe 会在 HELLO 阶段被拒绝，不能混用。
+CWNP v4/v5 exe 会在 HELLO 阶段被拒绝，不能混用。
 
 在 Windows 的“设置 → 系统 → 显示”中，将用于显示 Crosswin HWND 的实际显示器
 缩放设为 **150%**。本阶段先以单一 remote Windows output 为目标；Agent 启动若
@@ -125,6 +127,9 @@ Linux 终端 B：
    检查 Linux `present` 依次出现 50/50 的 `src=[400,0 400x600]`、1px 的
    `src=[799,0 1x600]`，而 Windows 的 physical HWND 宽分别为 600 px、2 px。
    Windows 不得在收到 Linux `WINDOW_PRESENT` 前自行移动 HWND。
+   若继续拖过 Windows remote output 的最外侧，Linux 日志应出现
+   `shell-grab-motion-clamped-to-desktop`；窗口停在边缘，不应崩溃或持续刷
+   `WINDOW_PRESENT`。
 2. 另开 Linux 终端运行：
 
        WAYLAND_DISPLAY=crosswin-7d-win \

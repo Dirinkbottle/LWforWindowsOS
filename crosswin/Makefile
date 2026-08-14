@@ -6,9 +6,9 @@ COMMON = common/protocol.c
 SESSION = fake-server/pattern.c fake-server/session.c
 BINDIR = build
 
-.PHONY: all test integration input-integration stage7d-integration sanitize clean
+.PHONY: all test integration input-integration stage7d-integration stage8-integration sanitize clean
 
-all: $(BINDIR)/fake-server $(BINDIR)/protocol_test $(BINDIR)/session_test $(BINDIR)/scripted-agent $(BINDIR)/input-agent $(BINDIR)/stage5-agent $(BINDIR)/stage6-agent $(BINDIR)/stage7a-agent $(BINDIR)/stage7b-agent $(BINDIR)/stage7b-popup-agent $(BINDIR)/stage7c-agent $(BINDIR)/stage7c-stress-agent $(BINDIR)/stage7c-reconnect-agent $(BINDIR)/stage7d-geometry-agent
+all: $(BINDIR)/fake-server $(BINDIR)/protocol_test $(BINDIR)/session_test $(BINDIR)/scripted-agent $(BINDIR)/input-agent $(BINDIR)/stage5-agent $(BINDIR)/stage6-agent $(BINDIR)/stage7a-agent $(BINDIR)/stage7b-agent $(BINDIR)/stage7b-popup-agent $(BINDIR)/stage7c-agent $(BINDIR)/stage7c-stress-agent $(BINDIR)/stage7c-reconnect-agent $(BINDIR)/stage7d-geometry-agent $(BINDIR)/stage8-agent
 
 $(BINDIR):
 	mkdir -p $@
@@ -55,6 +55,9 @@ $(BINDIR)/stage7c-reconnect-agent: $(COMMON) tests/stage7c_reconnect_agent.c | $
 $(BINDIR)/stage7d-geometry-agent: $(COMMON) tests/stage7d_geometry_agent.c | $(BINDIR)
 	$(CC) $(CFLAGS) $^ -o $@
 
+$(BINDIR)/stage8-agent: $(COMMON) tests/stage8_agent.c | $(BINDIR)
+	$(CC) $(CFLAGS) $^ -o $@
+
 test: $(BINDIR)/protocol_test $(BINDIR)/session_test
 	./$(BINDIR)/protocol_test
 	./$(BINDIR)/session_test
@@ -68,6 +71,9 @@ input-integration: $(BINDIR)/fake-server $(BINDIR)/input-agent
 
 stage7d-integration: all
 	./tests/stage7d_integration.sh
+
+stage8-integration: all
+	./tests/stage8_integration.sh
 
 sanitize:
 	$(MAKE) clean

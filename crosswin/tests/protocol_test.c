@@ -449,6 +449,48 @@ static void test_pointer_payloads(void) {
     CHECK(decoded_wheel.delta_x == -120 && decoded_wheel.delta_y == 240);
 }
 
+static void test_keyboard_payloads(void) {
+    uint8_t focus_payload[16] = {0};
+    uint8_t key_payload[24] = {0};
+    CwKeyboardFocus focus;
+    CwKeyboardKey key;
+    CwBuffer encoded;
+    CwHeader header;
+
+    cw_store_u64_le(focus_payload, 7U);
+    cw_store_u32_le(focus_payload + 8U, 1U);
+    CHECK(cw_decode_keyboard_focus(focus_payload, sizeof(focus_payload), &focus));
+    CHECK(focus.window_id == 7U && focus.focused);
+    cw_buffer_init(&encoded);
+    CHECK(cw_message_encode(&encoded, CW_MESSAGE_KEYBOARD_FOCUS, 0U, 101U,
+                            focus_payload, sizeof(focus_payload)));
+    CHECK(cw_header_decode(encoded.data, &header));
+    CHECK(header.type == CW_MESSAGE_KEYBOARD_FOCUS && header.payload_length == 16U);
+    cw_store_u32_le(focus_payload + 12U, 1U);
+    CHECK(!cw_message_encode(&encoded, CW_MESSAGE_KEYBOARD_FOCUS, 0U, 102U,
+                             focus_payload, sizeof(focus_payload)));
+    cw_buffer_destroy(&encoded);
+
+    cw_store_u64_le(key_payload, 7U);
+    cw_store_u32_le(key_payload + 8U, 30U); /* KEY_A */
+    cw_store_u32_le(key_payload + 12U, CW_KEY_PRESSED);
+    cw_store_u64_le(key_payload + 16U, 1234U);
+    CHECK(cw_decode_keyboard_key(key_payload, sizeof(key_payload), &key));
+    CHECK(key.window_id == 7U && key.key == 30U && key.state == CW_KEY_PRESSED &&
+          key.timestamp_ms == 1234U);
+    cw_buffer_init(&encoded);
+    CHECK(cw_message_encode(&encoded, CW_MESSAGE_KEYBOARD_KEY, 0U, 103U,
+                            key_payload, sizeof(key_payload)));
+    cw_store_u32_le(key_payload + 8U, CW_MAX_LINUX_KEYCODE + 1U);
+    CHECK(!cw_message_encode(&encoded, CW_MESSAGE_KEYBOARD_KEY, 0U, 104U,
+                             key_payload, sizeof(key_payload)));
+    cw_store_u32_le(key_payload + 8U, 30U);
+    cw_store_u32_le(key_payload + 12U, 2U);
+    CHECK(!cw_message_encode(&encoded, CW_MESSAGE_KEYBOARD_KEY, 0U, 105U,
+                             key_payload, sizeof(key_payload)));
+    cw_buffer_destroy(&encoded);
+}
+
 int main(void) {
     test_header_and_full_message();
     test_tcp_fragmentation();
@@ -458,6 +500,7 @@ int main(void) {
     test_output_config_payload();
     test_damage_payloads();
     test_pointer_payloads();
+    test_keyboard_payloads();
     printf("protocol tests: PASS\n");
     printf("cases: %lu\n", cases);
     return EXIT_SUCCESS;

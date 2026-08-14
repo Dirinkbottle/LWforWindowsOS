@@ -3,7 +3,7 @@ Stage 7B：Wayland 场景子树、Alpha 与 xdg_popup 验证
 
 Stage 7B 完成时引入 CWNP v3：WINDOW_CREATE 从 16 字节扩展为 24 字节，末尾
 新增 parent_window_id：0 是普通 toplevel，非 0 是其 xdg_popup 父窗口 ID。当前
-代码已在 Stage 7D 升级到 CWNP v5，因此运行本文件的所有命令时必须使用同一份
+代码已在 Stage 8/9 升级到 CWNP v6，因此运行本文件的所有命令时必须使用同一份
 最新 Weston、测试端与 Windows Agent，不能混用旧 v2/v3 二进制。
 
 本阶段的所有窗口位置、可见裁剪和 source rect 仍由 Linux Weston 决定；Windows

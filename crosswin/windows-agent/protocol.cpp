@@ -261,3 +261,24 @@ bool AgentProtocol::send_pointer_capture_lost(const CwPointerCaptureLost &captur
     return queue_message(CW_MESSAGE_POINTER_CAPTURE_LOST, payload.data(),
                          static_cast<std::uint32_t>(payload.size()));
 }
+
+bool AgentProtocol::send_keyboard_focus(const CwKeyboardFocus &focus) {
+    std::array<std::uint8_t, 16U> payload{};
+
+    cw_store_u64_le(payload.data(), focus.window_id);
+    cw_store_u32_le(payload.data() + 8U, focus.focused ? 1U : 0U);
+    cw_store_u32_le(payload.data() + 12U, 0U);
+    return queue_message(CW_MESSAGE_KEYBOARD_FOCUS, payload.data(),
+                         static_cast<std::uint32_t>(payload.size()));
+}
+
+bool AgentProtocol::send_keyboard_key(const CwKeyboardKey &key) {
+    std::array<std::uint8_t, 24U> payload{};
+
+    cw_store_u64_le(payload.data(), key.window_id);
+    cw_store_u32_le(payload.data() + 8U, key.key);
+    cw_store_u32_le(payload.data() + 12U, key.state);
+    cw_store_u64_le(payload.data() + 16U, key.timestamp_ms);
+    return queue_message(CW_MESSAGE_KEYBOARD_KEY, payload.data(),
+                         static_cast<std::uint32_t>(payload.size()));
+}

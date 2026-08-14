@@ -84,12 +84,17 @@ run_drag_case() {
 	local output_x=$3
 	local output_y=$4
 	local scale=$5
+	local outside_output_test=${6:-false}
 	local socket="crosswin-7d-drag-${placement}"
 	local log_file="${log_dir}/drag-${placement}.log"
+	local agent_args=("${repo_root}/crosswin/build/stage6-agent" "${port}"
+		--scale "${scale}" --placement "${placement}")
 
 	start_weston "${socket}" "${port}" "${output_x}" "${output_y}" "${scale}" "" "" "${log_file}"
-	"${repo_root}/crosswin/build/stage6-agent" "${port}" \
-		--scale "${scale}" --placement "${placement}" &
+	if [[ ${outside_output_test} == true ]]; then
+		agent_args+=(--test-outside-output)
+	fi
+	"${agent_args[@]}" &
 	local agent_pid=$!
 	WAYLAND_DISPLAY="${socket}" \
 		"${repo_root}/weston/build-stage4/crosswin/crosswin-stage5-client" --run-ms 1000
@@ -112,6 +117,7 @@ run_clip_case below-half 44667 0 640 2/1 80 340
 run_clip_case below-one 44668 0 640 2/1 80 41
 run_drag_case right 44670 1024 0 1/1
 run_drag_case left 44671 -1920 0 3/2
+run_drag_case right 44672 1024 0 1/1 true
 
 echo "stage7d logical geometry and directional drag integration: PASS"
 echo "logs: ${log_dir}"

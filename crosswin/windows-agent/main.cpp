@@ -87,13 +87,17 @@ private:
         }
         application = reinterpret_cast<AgentApplication *>(
             GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+        if (application != nullptr && message == CW_WM_APPLY_PENDING_PRESENTS) {
+            application->present_dispatch_posted_ = false;
+            if (!application->apply_pending_presents()) {
+                application->fail_connection("[present] proxy presentation failed");
+            }
+            return 0;
+        }
         if (application != nullptr && message == CW_WM_SOCKET) {
             if (!application->protocol_.on_socket_event(wparam, lparam)) {
-                std::fprintf(stderr, "[socket] connection closed or protocol processing failed\n");
-                application->protocol_.close();
-                application->windows_.clear();
-                application->exit_code_ = EXIT_FAILURE;
-                PostQuitMessage(EXIT_FAILURE);
+                application->fail_connection(
+                    "[socket] connection closed or protocol processing failed");
             }
             return 0;
         }
@@ -118,6 +122,69 @@ private:
     ProxyWindow *find_window(std::uint64_t window_id) {
         const auto it = windows_.find(window_id);
         return it == windows_.end() ? nullptr : it->second.get();
+    }
+
+    void fail_connection(const char *reason) {
+        std::fprintf(stderr, "%s\n", reason);
+        pending_presents_.clear();
+        protocol_.close();
+        windows_.clear();
+        exit_code_ = EXIT_FAILURE;
+        PostQuitMessage(EXIT_FAILURE);
+    }
+
+    bool queue_present(const CwWindowPresent &present) {
+        if (find_window(present.window_id) == nullptr) {
+            return false;
+        }
+        const auto existing = pending_presents_.find(present.window_id);
+        if (existing != pending_presents_.end() && options_.trace_present) {
+            std::printf("[present coalesce] win=%llu drop-seq=%llu keep-seq=%llu\n",
+                        static_cast<unsigned long long>(present.window_id),
+                        static_cast<unsigned long long>(existing->second.presentation_sequence),
+                        static_cast<unsigned long long>(present.presentation_sequence));
+        }
+        pending_presents_.insert_or_assign(present.window_id, present);
+        if (!present_dispatch_posted_) {
+            if (PostMessageW(socket_window_, CW_WM_APPLY_PENDING_PRESENTS, 0U, 0U) == FALSE) {
+                return false;
+            }
+            present_dispatch_posted_ = true;
+        }
+        return true;
+    }
+
+    bool apply_pending_presents() {
+        std::unordered_map<std::uint64_t, CwWindowPresent> pending;
+
+        pending.swap(pending_presents_);
+        for (const auto &entry : pending) {
+            const CwWindowPresent &present = entry.second;
+            ProxyWindow *window = find_window(present.window_id);
+            Rect physical{};
+
+            /* A destroy may legitimately overtake a queued paint for the
+             * same window. Dropping that paint is correct: it was never made
+             * visible and therefore must not receive an ACK. */
+            if (window == nullptr) {
+                continue;
+            }
+            if (!window->apply_present(present)) {
+                return false;
+            }
+            physical = window->physical_destination();
+            if (options_.trace_present) {
+                std::printf("[present apply] win=%llu seq=%llu src=[%d,%d %dx%d] "
+                            "logical-dst=[%d,%d %dx%d] physical-hwnd=[%d,%d %dx%d]\n",
+                            static_cast<unsigned long long>(present.window_id),
+                            static_cast<unsigned long long>(present.presentation_sequence),
+                            present.source_x, present.source_y, present.source_w, present.source_h,
+                            present.destination_x, present.destination_y,
+                            present.destination_w, present.destination_h,
+                            physical.x, physical.y, physical.w, physical.h);
+            }
+        }
+        return true;
     }
 
     bool create_proxy(const CwWindowCreate &create) {
@@ -221,28 +288,11 @@ private:
         }
         case CW_MESSAGE_WINDOW_PRESENT: {
             CwWindowPresent present{};
-			ProxyWindow *window;
-			Rect physical{};
 
             if (!cw_decode_window_present(payload, header.payload_length, &present)) {
                 return false;
             }
-			window = find_window(present.window_id);
-			if (window == nullptr || !window->apply_present(present)) {
-				return false;
-			}
-			physical = window->physical_destination();
-            if (options_.trace_present) {
-                std::printf("[present apply] win=%llu seq=%llu src=[%d,%d %dx%d] "
-                            "logical-dst=[%d,%d %dx%d] physical-hwnd=[%d,%d %dx%d]\n",
-                            static_cast<unsigned long long>(present.window_id),
-                            static_cast<unsigned long long>(present.presentation_sequence),
-                            present.source_x, present.source_y, present.source_w, present.source_h,
-                            present.destination_x, present.destination_y,
-                            present.destination_w, present.destination_h,
-							physical.x, physical.y, physical.w, physical.h);
-            }
-			return true;
+            return queue_present(present);
         }
         case CW_MESSAGE_WINDOW_ACTIVATE: {
             CwWindowActivate activate{};
@@ -266,6 +316,7 @@ private:
                 !it->second->apply_destroy(window_id)) {
                 return false;
             }
+            pending_presents_.erase(window_id);
             windows_.erase(it);
             if (windows_.empty()) {
                 PostQuitMessage(EXIT_SUCCESS);
@@ -282,6 +333,8 @@ private:
     HWND socket_window_ = nullptr;
     AgentProtocol protocol_{};
     std::unordered_map<std::uint64_t, std::unique_ptr<ProxyWindow>> windows_{};
+	std::unordered_map<std::uint64_t, CwWindowPresent> pending_presents_{};
+	bool present_dispatch_posted_ = false;
 	CwOutputConfig output_config_{};
 	bool output_config_received_ = false;
     int exit_code_ = EXIT_SUCCESS;

@@ -24,6 +24,7 @@ enum output_placement {
 struct agent {
 	int fd;
 	bool hello, created, initial_present, moved_present, released, destroyed;
+	bool outside_output_test;
 	uint32_t frames, presents;
 	uint32_t expected_scale_numerator, expected_scale_denominator;
 	enum output_placement placement;
@@ -95,7 +96,10 @@ static bool send_drag_motion(struct agent *agent, uint64_t wire_sequence,
 
 	if (!placement_is_vertical(agent)) {
 		if (agent->placement == OUTPUT_RIGHT) {
-			static const int32_t x[] = {-300, -699, -700, 280};
+			/* The last value is intentionally past the only remote output's
+			 * right edge. The exporter must clamp it to the compositor desktop
+			 * edge before passing it to libweston during an xdg move grab. */
+			static const int32_t x[] = {-300, -699, -700, 280, 2300};
 			output_x = x[step];
 		} else {
 			static const int32_t x[] = {1620, 2019, 2020, 280};
@@ -112,6 +116,20 @@ static bool send_drag_motion(struct agent *agent, uint64_t wire_sequence,
 	}
 	return send_motion(agent, wire_sequence, presentation_sequence,
 			   100, 10, output_x, output_y);
+}
+
+static bool send_outside_output_motion_burst(struct agent *agent,
+					     uint64_t presentation_sequence)
+{
+	uint64_t wire_sequence;
+
+	/* Repeated WM_MOUSEMOVE messages are normal while Win32 capture is held at
+	 * an outer desktop edge. The canonical view position is unchanged after the
+	 * first one, so exactly one new WINDOW_PRESENT is permitted. */
+	for (wire_sequence = 12U; wire_sequence < 76U; ++wire_sequence)
+		if (!send_drag_motion(agent, wire_sequence, presentation_sequence, 4U))
+			return false;
+	return true;
 }
 
 static bool matches_drag_presentation(const struct agent *agent,
@@ -150,6 +168,19 @@ static bool matches_drag_presentation(const struct agent *agent,
 			present->destination_x == 80 && present->destination_y == 0 &&
 			present->destination_w == 800 && present->destination_h == source_h[step];
 	}
+}
+
+static bool matches_outside_output_presentation(const struct agent *agent,
+						 const CwWindowPresent *present)
+{
+	/* Right-side remote output is [1024, 2944). The move press is at x=1204
+	 * while the view begins at x=1104, so clamping a capture point to x=2943
+	 * puts the 800px surface at x=2843: its final 101px remains visible. */
+	return agent->placement == OUTPUT_RIGHT && present->visible &&
+		present->source_x == 0 && present->source_y == 0 &&
+		present->source_w == 101 && present->source_h == 600 &&
+		present->destination_x == 1819 && present->destination_y == 80 &&
+		present->destination_w == 101 && present->destination_h == 600;
 }
 
 static bool send_all(int fd, const uint8_t *bytes, size_t length)
@@ -338,13 +369,27 @@ static bool on_message(void *context, const CwHeader *header,
 			    present.destination_x != (placement_is_vertical(agent) ? 80 : 180) ||
 			    present.destination_y != (placement_is_vertical(agent) ? 180 : 80) ||
 			    present.destination_w != 800 || present.destination_h != 600 ||
-			    !send_ack(agent, 11, present.presentation_sequence) ||
-			    !send_button(agent, 12, present.presentation_sequence,
-					 CW_BUTTON_RELEASED, 100, 10,
-					 placement_is_vertical(agent) ? 180 : 280,
-					 placement_is_vertical(agent) ? 190 : 90))
+			    !send_ack(agent, 11, present.presentation_sequence))
 				fail("fully-remote presentation or release");
+			if (agent->outside_output_test) {
+				if (!send_outside_output_motion_burst(agent, present.presentation_sequence))
+					fail("outside-output drag-motion burst");
+			} else if (!send_button(agent, 12, present.presentation_sequence,
+						CW_BUTTON_RELEASED, 100, 10,
+						placement_is_vertical(agent) ? 180 : 280,
+						placement_is_vertical(agent) ? 190 : 90)) {
+				fail("fully-remote presentation or release");
+			}
 			agent->released = true;
+			agent->presents++;
+			return true;
+		}
+		if (agent->presents == 5 && agent->outside_output_test) {
+			if (!matches_outside_output_presentation(agent, &present) ||
+			    !send_ack(agent, 76, present.presentation_sequence) ||
+			    !send_button(agent, 77, present.presentation_sequence,
+					 CW_BUTTON_RELEASED, 100, 10, 2300, 90))
+				fail("outside-output clamped presentation or release");
 			agent->presents++;
 			return true;
 		}
@@ -358,7 +403,8 @@ static bool on_message(void *context, const CwHeader *header,
 		return true;
 	}
 	case CW_MESSAGE_WINDOW_DESTROY:
-		if (!agent->moved_present || !agent->released || agent->presents != 5 ||
+		if (!agent->moved_present || !agent->released ||
+		    agent->presents != (agent->outside_output_test ? 6U : 5U) ||
 		    agent->frames != 1 ||
 		    header->payload_length != 8 || cw_load_u64_le(payload) != 1)
 			fail("bad WINDOW_DESTROY");
@@ -395,11 +441,17 @@ int main(int argc, char **argv)
 				     "[--placement right|left|above|below]");
 			continue;
 		}
+		if (strcmp(argv[index], "--test-outside-output") == 0) {
+			agent.outside_output_test = true;
+			continue;
+		}
 		port = strtol(argv[index], &end, 10);
 		if (!*argv[index] || *end || port < 1 || port > 65535)
 			fail("usage: stage6-agent [port] [--scale numerator/denominator] "
 			     "[--placement right|left|above|below]");
 	}
+	if (agent.outside_output_test && agent.placement != OUTPUT_RIGHT)
+		fail("--test-outside-output requires --placement right");
 	address.sin_port = htons((uint16_t)port);
 	if (inet_pton(AF_INET, "127.0.0.1", &address.sin_addr) != 1)
 		return EXIT_FAILURE;

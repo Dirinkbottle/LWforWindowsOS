@@ -25,6 +25,9 @@
 #include <vector>
 
 constexpr UINT CW_WM_SOCKET = WM_APP + 1U;
+/* Presentation is deliberately dispatched outside the socket callback so a
+ * burst of drag presents collapses to the newest state before GDI renders. */
+constexpr UINT CW_WM_APPLY_PENDING_PRESENTS = WM_APP + 2U;
 
 /*
  * UI-thread-only Winsock transport.  WSAAsyncSelect makes the socket
@@ -56,6 +59,8 @@ public:
     bool send_pointer_button(const CwPointerButtonEvent &button);
     bool send_pointer_wheel(const CwPointerWheel &wheel);
     bool send_pointer_capture_lost(const CwPointerCaptureLost &capture_lost);
+    bool send_keyboard_focus(const CwKeyboardFocus &focus);
+    bool send_keyboard_key(const CwKeyboardKey &key);
 
 private:
     bool queue_message(
