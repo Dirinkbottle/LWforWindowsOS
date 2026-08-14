@@ -129,8 +129,15 @@ popup surface [94,30]。
 * 半透明绿色 nested popup 在红 popup 之上；边角应保持透明/半透明，不能变成黑色
   矩形；
 * 单击红色 popup 可见区域。Windows 输出应有 POINTER_ENTER/POINTER_BUTTON，Linux
-  日志应出现 `win=2`、`surface=[...] delivered`；
+  日志应出现 `win=2`、`surface=[...] delivered`；红色 popup 会立即变成
+  半透明黄色。这是测试 client 的专用点击反馈，不是应用功能；
 * 30 秒后 client 退出，三个 popup/parent HWND 都立即消失，Windows Agent 不应崩溃。
+
+若 Agent 已收到三个 `[window create]` 但桌面完全没有窗口，说明运行的仍是旧
+exe，或 Windows 上的 `proxy_window.cpp` 尚未同步。必须同步本次的整个
+`crosswin/` 目录并重新双击编译脚本；新版会在第一次 `WINDOW_PRESENT` 时以
+`SWP_SHOWWINDOW` 显式显示分层 HWND。若仍失败，请贴出 `--trace-frame` 中的
+`[layered present failed] ... error=...` 行。
 
 只有上述 Linux 自动测试和 Windows 目视/点击测试都通过，才可标记：
 

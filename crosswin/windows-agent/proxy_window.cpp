@@ -268,12 +268,24 @@ bool ProxyWindow::update_layered_window() {
     HGDIOBJ old_bitmap = nullptr;
     void *bits = nullptr;
     bool ok = false;
+    DWORD error = ERROR_SUCCESS;
 
     if (hwnd_ == nullptr || framebuffer_.empty() || !presentation_.visible ||
         presentation_.destination_w <= 0 || presentation_.destination_h <= 0 ||
         presentation_.source_w != presentation_.destination_w ||
         presentation_.source_h != presentation_.destination_h) {
         return false;
+    }
+    /* UpdateLayeredWindow changes pixels and geometry, but it does not set
+     * WS_VISIBLE on a newly-created WS_POPUP.  The pre-Stage-7 GDI path used
+     * SetWindowPos(..., SWP_SHOWWINDOW), so omitting this left every first
+     * per-pixel-alpha proxy HWND hidden on the Windows desktop. */
+    if (!IsWindowVisible(hwnd_) &&
+        !SetWindowPos(hwnd_, HWND_TOP, presentation_.destination_x,
+                      presentation_.destination_y, presentation_.destination_w,
+                      presentation_.destination_h, SWP_NOACTIVATE | SWP_SHOWWINDOW)) {
+        error = GetLastError();
+        goto out;
     }
     info.bmiHeader.biSize = sizeof(info.bmiHeader);
     info.bmiHeader.biWidth = presentation_.destination_w;
@@ -283,14 +295,17 @@ bool ProxyWindow::update_layered_window() {
     info.bmiHeader.biCompression = BI_RGB;
     screen = GetDC(nullptr);
     if (screen == nullptr) {
+        error = GetLastError();
         goto out;
     }
     memory = CreateCompatibleDC(screen);
     if (memory == nullptr) {
+        error = GetLastError();
         goto out;
     }
     bitmap = CreateDIBSection(memory, &info, DIB_RGB_COLORS, &bits, nullptr, 0U);
     if (bitmap == nullptr || bits == nullptr) {
+        error = GetLastError();
         goto out;
     }
     for (int row = 0; row < presentation_.source_h; ++row) {
@@ -303,8 +318,15 @@ bool ProxyWindow::update_layered_window() {
                     static_cast<std::size_t>(presentation_.source_w) * 4U);
     }
     old_bitmap = SelectObject(memory, bitmap);
+    if (old_bitmap == nullptr || old_bitmap == HGDI_ERROR) {
+        error = GetLastError();
+        goto out;
+    }
     ok = UpdateLayeredWindow(hwnd_, screen, &destination, &size, memory, &source,
                              0U, &blend, ULW_ALPHA) != FALSE;
+    if (!ok) {
+        error = GetLastError();
+    }
 out:
     if (old_bitmap != nullptr && memory != nullptr) {
         SelectObject(memory, old_bitmap);
@@ -317,6 +339,15 @@ out:
     }
     if (screen != nullptr) {
         ReleaseDC(nullptr, screen);
+    }
+    if (!ok && trace_frame_) {
+        std::printf("[layered present failed] win=%llu error=%lu src=[%d,%d %dx%d] "
+                    "dst=[%d,%d %dx%d]\n",
+                    static_cast<unsigned long long>(window_id_),
+                    static_cast<unsigned long>(error), presentation_.source_x,
+                    presentation_.source_y, presentation_.source_w, presentation_.source_h,
+                    presentation_.destination_x, presentation_.destination_y,
+                    presentation_.destination_w, presentation_.destination_h);
     }
     return ok;
 }
