@@ -19,6 +19,7 @@ static bool send_all(int fd, const uint8_t *p, size_t n) { while(n){ssize_t r=se
 static bool send_message(struct agent *a,uint16_t type,uint64_t seq,const uint8_t *payload,uint32_t n){CwBuffer b;bool ok;cw_buffer_init(&b);ok=cw_message_encode(&b,type,0,seq,payload,n)&&send_all(a->fd,b.data,b.length);cw_buffer_destroy(&b);return ok;}
 static bool on_message(void *ctx,const CwHeader *h,const uint8_t *p){struct agent *a=ctx;CwHelloAck ha;CwWindowCreate c;CwWindowFrame f;CwWindowPresent pr;uint8_t ack[16];
 	if(h->type==CW_MESSAGE_HELLO_ACK){if(!cw_decode_hello_ack(p,h->payload_length,&ha)||ha.selected_version!=CW_PROTOCOL_VERSION)fail("bad HELLO_ACK");a->hello=true;return true;}
+	if(h->type==CW_MESSAGE_OUTPUT_CONFIG){CwOutputConfig config;if(!a->hello||!cw_decode_output_config(p,h->payload_length,&config)||config.scale_numerator!=1U||config.scale_denominator!=1U)fail("bad OUTPUT_CONFIG");return true;}
 	if(h->type==CW_MESSAGE_WINDOW_CREATE){if(!cw_decode_window_create(p,h->payload_length,&c)||!a->hello||c.window_id!=1||c.surface_width!=800||c.surface_height!=600)fail("bad CREATE");a->created=true;return true;}
 	if(h->type==CW_MESSAGE_WINDOW_FRAME){if(!cw_decode_window_frame(p,h->payload_length,&f)||!a->created||f.width!=800||f.height!=600||f.stride!=3200||f.pixel_format!=CW_PIXEL_FORMAT_BGRA8888||f.pixel_bytes!=1920000)fail("bad FRAME");a->frames++;a->framed=true;return true;}
 	if(h->type==CW_MESSAGE_WINDOW_PRESENT){

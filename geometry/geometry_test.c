@@ -308,6 +308,43 @@ static void test_scale_conversions(void) {
     CHECK(!logical_rect_to_physical((Rect){INT32_MAX, 0, 1, 1}, (Scale){2, 1}, &rect));
 }
 
+static void test_scaled_fragment_pointer_conversions(void) {
+    Point logical;
+
+    /* Logical [1,4) at 150% has physical coverage [1,6): five physical
+     * pixels map back to logical client pixels 0,0,1,1,2. This deliberately
+     * exercises a fractional left edge. */
+    CHECK(physical_fragment_local_to_logical((Rect){1, 1, 3, 3},
+                                             (Scale){3, 2},
+                                             (Point){0, 0}, &logical));
+    expect_point("150 percent fragment first pixel", logical, (Point){0, 0});
+    CHECK(physical_fragment_local_to_logical((Rect){1, 1, 3, 3},
+                                             (Scale){3, 2},
+                                             (Point){1, 1}, &logical));
+    expect_point("150 percent fragment repeated logical pixel", logical, (Point){0, 0});
+    CHECK(physical_fragment_local_to_logical((Rect){1, 1, 3, 3},
+                                             (Scale){3, 2},
+                                             (Point){2, 2}, &logical));
+    expect_point("150 percent fragment middle pixel", logical, (Point){1, 1});
+    CHECK(physical_fragment_local_to_logical((Rect){1, 1, 3, 3},
+                                             (Scale){3, 2},
+                                             (Point){4, 4}, &logical));
+    expect_point("150 percent fragment final pixel", logical, (Point){2, 2});
+    CHECK(physical_fragment_local_to_logical((Rect){1, 1, 3, 3},
+                                             (Scale){3, 2},
+                                             (Point){-1, -1}, &logical));
+    expect_point("150 percent captured negative point", logical, (Point){-1, -1});
+
+    CHECK(physical_fragment_local_to_logical((Rect){0, 0, 800, 600},
+                                             (Scale){5, 4},
+                                             (Point){999, 749}, &logical));
+    expect_point("125 percent fragment final pixel", logical, (Point){799, 599});
+    CHECK(!physical_fragment_local_to_logical((Rect){0, 0, 0, 1},
+                                              (Scale){3, 2}, (Point){0, 0}, &logical));
+    CHECK(!physical_fragment_local_to_logical((Rect){0, 0, 1, 1},
+                                              (Scale){0, 1}, (Point){0, 0}, &logical));
+}
+
 static uint32_t next_random(uint32_t *state) {
     uint32_t value = *state;
 
@@ -399,6 +436,7 @@ int main(void) {
     test_coordinate_transforms();
     test_remote_pointer_conversion();
     test_scale_conversions();
+    test_scaled_fragment_pointer_conversions();
     test_properties();
 
     printf("geometry tests: PASS\n");

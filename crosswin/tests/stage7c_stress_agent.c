@@ -74,6 +74,13 @@ static bool on_message(void *context, const CwHeader *header, const uint8_t *pay
 		agent->hello = true;
 		return true;
 	}
+	case CW_MESSAGE_OUTPUT_CONFIG: {
+		CwOutputConfig config;
+
+		return agent->hello && cw_decode_output_config(payload,
+			header->payload_length, &config) && config.scale_numerator == 1U &&
+			config.scale_denominator == 1U;
+	}
 	case CW_MESSAGE_WINDOW_CREATE: {
 		CwWindowCreate create;
 		if (!agent->hello || agent->current_id != 0U || agent->created >= CYCLES ||

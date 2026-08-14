@@ -1,22 +1,22 @@
-# CrossWin Stage 2–7C prototype
+# CrossWin Stage 2–7D prototype
 
 This directory adds the constrained TCP prototype on top of the Stage 1
 Geometry Oracle in `../geometry`. It currently provides a single remote
 output, TCP, real Weston `xdg_toplevel + xdg_popup + wl_shm` export,
 Linux-owned drag geometry, scene-subtree composition (subsurface/alpha),
 per-pixel-alpha Windows proxy HWNDs, persistent BGRA8888 framebuffers with
-incremental damage, and independent multi-window lifecycle/activation
-ordering. GPU/dmabuf, DPI and a high-performance transport remain later
-stages.
+incremental damage, independent multi-window lifecycle/activation ordering,
+and rational logical-to-physical Windows presentation scaling. GPU/dmabuf and
+a high-performance transport remain later stages.
 
 ## Wire contract
 
-CWNP v4 has a fixed 24-byte header, explicitly serialized in little endian:
+CWNP v5 has a fixed 24-byte header, explicitly serialized in little endian:
 
 | Byte offset | Size | Field |
 | --- | ---: | --- |
 | 0 | 4 | magic (`CWNP`) |
-| 4 | 2 | protocol version (4) |
+| 4 | 2 | protocol version (5) |
 | 6 | 2 | message type |
 | 8 | 4 | flags |
 | 12 | 4 | payload length |
@@ -51,8 +51,15 @@ logical ID and forces a fresh full frame.
 
 `WINDOW_PRESENT` is atomic: it contains surface-local source rect,
 remote-output-local destination rect, visibility, and a presentation sequence.
-For visible v1 presentation, source and destination dimensions must match, so
-rendering is always 1:1.  The Windows Agent ACKs only after applying that state.
+For visible presentation, source and destination dimensions match in the
+logical coordinate space. The Windows Agent ACKs only after applying that state.
+
+`OUTPUT_CONFIG` is sent after HELLO_ACK and before any CREATE. It carries the
+remote output's global logical rectangle and rational physical scale. The
+Agent uses the Stage 1 Geometry Oracle to convert each logical destination to
+a physical HWND rectangle and map physical mouse points back to logical CWNP
+coordinates. Per-Monitor DPI Awareness V2 is enabled before HWND creation so
+Windows does not apply compatibility double scaling.
 
 Pointer events carry this presentation sequence.  The fake server stores the
 last 64 presentation states and maps `client -> surface` with
@@ -75,7 +82,8 @@ dropped rather than reinterpreted using the newest presentation.
 
 详细的 Stage 7A 验证见 `../docs/stage7a-damage-test.txt`；Stage 7B 的 Linux
 自动验证和 Windows 必测步骤见 `../docs/stage7b-scene-popup-test.txt`；Stage
-7C 的多窗口/生命周期验证见 `../docs/stage7c-multiwindow-test.txt`。
+7C 的多窗口/生命周期验证见 `../docs/stage7c-multiwindow-test.txt`；Stage 7D 的
+DPI、缩放、输出位置验证见 `../docs/stage7d-dpi-test.txt`。
 
 ## Linux checks
 
@@ -83,6 +91,7 @@ dropped rather than reinterpreted using the newest presentation.
 make test
 make integration
 make input-integration
+make stage7d-integration
 make sanitize
 ```
 

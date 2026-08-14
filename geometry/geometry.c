@@ -398,3 +398,56 @@ bool logical_rect_to_physical(Rect logical, Scale scale, Rect *physical) {
     };
     return true;
 }
+
+/* C truncates negative division toward zero, so normalize it explicitly to
+ * preserve the floor policy used by the rest of this geometry oracle. */
+static bool floor_divide_i64(int64_t numerator, int64_t denominator,
+                             int64_t *result)
+{
+    int64_t quotient;
+    int64_t remainder;
+
+    if (denominator <= 0 || result == NULL) {
+        return false;
+    }
+    quotient = numerator / denominator;
+    remainder = numerator % denominator;
+    if (remainder < 0) {
+        --quotient;
+    }
+    *result = quotient;
+    return true;
+}
+
+bool physical_fragment_local_to_logical(
+    Rect logical_fragment,
+    Scale scale,
+    Point physical_local,
+    Point *logical_local)
+{
+    Rect physical_fragment;
+    int64_t logical_x;
+    int64_t logical_y;
+    int64_t numerator;
+
+    clear_point(logical_local);
+    if (logical_local == NULL || !rect_is_valid(logical_fragment) ||
+        rect_is_empty(logical_fragment) ||
+        !logical_rect_to_physical(logical_fragment, scale, &physical_fragment) ||
+        rect_is_empty(physical_fragment)) {
+        return false;
+    }
+
+    numerator = (int64_t)physical_local.x * (int64_t)logical_fragment.w;
+    if (!floor_divide_i64(numerator, physical_fragment.w, &logical_x)) {
+        return false;
+    }
+    numerator = (int64_t)physical_local.y * (int64_t)logical_fragment.h;
+    if (!floor_divide_i64(numerator, physical_fragment.h, &logical_y) ||
+        !fits_i32(logical_x) || !fits_i32(logical_y)) {
+        return false;
+    }
+
+    *logical_local = (Point){(int32_t)logical_x, (int32_t)logical_y};
+    return true;
+}

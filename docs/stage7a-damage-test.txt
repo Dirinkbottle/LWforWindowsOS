@@ -1,7 +1,7 @@
 Stage 7A：增量帧缓冲区 / Damage 验证（Windows 必测）
 ===================================================
 
-Stage 7A 引入 damage 时 CWNP 升级到 v2；当前代码在 Stage 7C 已升级到 v4，
+Stage 7A 引入 damage 时 CWNP 升级到 v2；当前代码在 Stage 7D 已升级到 v5，
 并保持 `WINDOW_FRAME` 作为初始完整帧、重连和失步恢复的
 后备；正常的同尺寸绘制更新使用 `WINDOW_DAMAGE`。窗口位置、裁剪和可见性仍只由
 `WINDOW_PRESENT` 表示，因此拖动窗口时不应产生新的像素消息。

@@ -295,6 +295,14 @@ static void test_invalid_messages(void) {
     store_raw_header(frame, CW_PROTOCOL_MAGIC, CW_PROTOCOL_VERSION,
                      CW_MESSAGE_WINDOW_ACTIVATE, 8U);
     expect_decode_error(frame, CW_HEADER_SIZE + 8U, CW_DECODER_INVALID_PAYLOAD);
+
+    memset(frame, 0, sizeof(frame));
+    store_raw_header(frame, CW_PROTOCOL_MAGIC, CW_PROTOCOL_VERSION,
+                     CW_MESSAGE_OUTPUT_CONFIG, 24U);
+    cw_store_u32_le(frame + CW_HEADER_SIZE + 8U, 1920U);
+    cw_store_u32_le(frame + CW_HEADER_SIZE + 12U, 1080U);
+    cw_store_u32_le(frame + CW_HEADER_SIZE + 16U, 3U);
+    expect_decode_error(frame, CW_HEADER_SIZE + 24U, CW_DECODER_INVALID_PAYLOAD);
 }
 
 static void test_window_activate_payload(void) {
@@ -311,6 +319,33 @@ static void test_window_activate_payload(void) {
                             payload, sizeof(payload)));
     CHECK(cw_header_decode(encoded.data, &header));
     CHECK(header.type == CW_MESSAGE_WINDOW_ACTIVATE && header.payload_length == 8U);
+    cw_buffer_destroy(&encoded);
+}
+
+static void test_output_config_payload(void) {
+    uint8_t payload[24] = {0};
+    CwOutputConfig config;
+    CwBuffer encoded;
+    CwHeader header;
+
+    cw_store_i32_le(payload, -1920);
+    cw_store_i32_le(payload + 4U, -1080);
+    cw_store_u32_le(payload + 8U, 1707U);
+    cw_store_u32_le(payload + 12U, 960U);
+    cw_store_u32_le(payload + 16U, 3U);
+    cw_store_u32_le(payload + 20U, 2U);
+    CHECK(cw_decode_output_config(payload, sizeof(payload), &config));
+    CHECK(config.logical_x == -1920 && config.logical_y == -1080 &&
+          config.logical_width == 1707U && config.logical_height == 960U &&
+          config.scale_numerator == 3U && config.scale_denominator == 2U);
+    cw_buffer_init(&encoded);
+    CHECK(cw_message_encode(&encoded, CW_MESSAGE_OUTPUT_CONFIG, 0U, 92U,
+                            payload, sizeof(payload)));
+    CHECK(cw_header_decode(encoded.data, &header));
+    CHECK(header.type == CW_MESSAGE_OUTPUT_CONFIG && header.payload_length == 24U);
+    cw_store_u32_le(payload + 20U, 0U);
+    CHECK(!cw_message_encode(&encoded, CW_MESSAGE_OUTPUT_CONFIG, 0U, 93U,
+                             payload, sizeof(payload)));
     cw_buffer_destroy(&encoded);
 }
 
@@ -420,6 +455,7 @@ int main(void) {
     test_coalescing_and_mixed_stream();
     test_invalid_messages();
     test_window_activate_payload();
+    test_output_config_payload();
     test_damage_payloads();
     test_pointer_payloads();
     printf("protocol tests: PASS\n");

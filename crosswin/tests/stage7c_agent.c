@@ -24,6 +24,7 @@ struct agent {
 	int fd;
 	uint64_t wire_sequence;
 	bool hello, input_sent;
+	uint16_t last_type;
 	unsigned created, destroyed;
 	struct window_state windows[WINDOW_COUNT];
 };
@@ -101,6 +102,8 @@ static bool on_message(void *context, const CwHeader *header, const uint8_t *pay
 {
 	struct agent *agent = context;
 
+	agent->last_type = header->type;
+
 	switch (header->type) {
 	case CW_MESSAGE_HELLO_ACK: {
 		CwHelloAck ack;
@@ -110,6 +113,13 @@ static bool on_message(void *context, const CwHeader *header, const uint8_t *pay
 			return false;
 		agent->hello = true;
 		return true;
+	}
+	case CW_MESSAGE_OUTPUT_CONFIG: {
+		CwOutputConfig config;
+
+		return agent->hello && cw_decode_output_config(payload,
+			header->payload_length, &config) && config.scale_numerator == 1U &&
+			config.scale_denominator == 1U;
 	}
 	case CW_MESSAGE_WINDOW_CREATE: {
 		CwWindowCreate create;
@@ -234,8 +244,16 @@ int main(int argc, char **argv)
 		ssize_t received = recv(agent.fd, bytes, sizeof(bytes), 0);
 
 		if (received <= 0 || !cw_decoder_feed(&decoder, bytes, (size_t)received,
-						       on_message, &agent))
+						       on_message, &agent)) {
+			fprintf(stderr, "stage7c-agent: last=%s created=%u destroyed=%u "
+					"presents=[%u,%u,%u] hidden=%u decoder=%s\n",
+					cw_message_type_name(agent.last_type), agent.created,
+					agent.destroyed, agent.windows[0].presents,
+					agent.windows[1].presents, agent.windows[2].presents,
+					agent.windows[0].hidden ? 1U : 0U,
+					cw_decoder_error_string(cw_decoder_error(&decoder)));
 			fail("receive/decode");
+		}
 	}
 	cw_decoder_destroy(&decoder);
 	if (agent.created != WINDOW_COUNT || !agent.windows[0].hidden ||

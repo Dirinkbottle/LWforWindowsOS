@@ -17,6 +17,7 @@ enum {
     CW_WINDOW_PRESENT_ACK_PAYLOAD_SIZE = 16U,
     CW_WINDOW_DESTROY_PAYLOAD_SIZE = 8U,
     CW_WINDOW_ACTIVATE_PAYLOAD_SIZE = 8U,
+    CW_OUTPUT_CONFIG_PAYLOAD_SIZE = 24U,
     CW_POINTER_LOCATION_PAYLOAD_SIZE = 40U,
     CW_POINTER_MOTION_PAYLOAD_SIZE = 48U,
     CW_POINTER_BUTTON_PAYLOAD_SIZE = 48U,
@@ -64,6 +65,7 @@ bool cw_message_type_is_known(uint16_t type) {
     case CW_MESSAGE_WINDOW_FRAME_REQUEST:
     case CW_MESSAGE_WINDOW_RESIZE:
     case CW_MESSAGE_WINDOW_ACTIVATE:
+    case CW_MESSAGE_OUTPUT_CONFIG:
     case CW_MESSAGE_POINTER_ENTER:
     case CW_MESSAGE_POINTER_LEAVE:
     case CW_MESSAGE_POINTER_MOTION:
@@ -104,6 +106,8 @@ const char *cw_message_type_name(uint16_t type) {
         return "WINDOW_RESIZE";
     case CW_MESSAGE_WINDOW_ACTIVATE:
         return "WINDOW_ACTIVATE";
+    case CW_MESSAGE_OUTPUT_CONFIG:
+        return "OUTPUT_CONFIG";
     case CW_MESSAGE_POINTER_ENTER:
         return "POINTER_ENTER";
     case CW_MESSAGE_POINTER_LEAVE:
@@ -405,6 +409,12 @@ bool cw_message_is_valid(const CwHeader *header, const uint8_t *payload) {
     case CW_MESSAGE_WINDOW_ACTIVATE:
         return header->payload_length == CW_WINDOW_ACTIVATE_PAYLOAD_SIZE &&
                cw_load_u64_le(payload) != 0U;
+    case CW_MESSAGE_OUTPUT_CONFIG:
+        return header->payload_length == CW_OUTPUT_CONFIG_PAYLOAD_SIZE &&
+               cw_load_u32_le(payload + 8U) != 0U &&
+               cw_load_u32_le(payload + 12U) != 0U &&
+               cw_load_u32_le(payload + 16U) != 0U &&
+               cw_load_u32_le(payload + 20U) != 0U;
     case CW_MESSAGE_POINTER_ENTER:
     case CW_MESSAGE_POINTER_LEAVE:
         return header->payload_length == CW_POINTER_LOCATION_PAYLOAD_SIZE;
@@ -795,6 +805,24 @@ bool cw_decode_window_activate(const uint8_t *payload, uint32_t length,
         return false;
     }
     *out = (CwWindowActivate){cw_load_u64_le(payload)};
+    return true;
+}
+
+bool cw_decode_output_config(const uint8_t *payload, uint32_t length,
+                             CwOutputConfig *out)
+{
+    if (payload == NULL || out == NULL || length != CW_OUTPUT_CONFIG_PAYLOAD_SIZE ||
+        cw_load_u32_le(payload + 8U) == 0U ||
+        cw_load_u32_le(payload + 12U) == 0U ||
+        cw_load_u32_le(payload + 16U) == 0U ||
+        cw_load_u32_le(payload + 20U) == 0U) {
+        return false;
+    }
+    *out = (CwOutputConfig){
+        cw_load_i32_le(payload), cw_load_i32_le(payload + 4U),
+        cw_load_u32_le(payload + 8U), cw_load_u32_le(payload + 12U),
+        cw_load_u32_le(payload + 16U), cw_load_u32_le(payload + 20U),
+    };
     return true;
 }
 

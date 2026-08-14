@@ -19,6 +19,7 @@ typedef struct {
     unsigned cases;
     unsigned presents;
     bool hello_ack;
+    bool output_config;
     bool created;
     bool frame_received;
     bool destroyed;
@@ -119,10 +120,22 @@ static bool on_message(void *context, const CwHeader *header, const uint8_t *pay
         agent->hello_ack = true;
         return true;
     }
+    case CW_MESSAGE_OUTPUT_CONFIG: {
+        CwOutputConfig config;
+
+        CHECK(agent, agent->hello_ack);
+        CHECK(agent, !agent->output_config);
+        CHECK(agent, cw_decode_output_config(payload, header->payload_length, &config));
+        CHECK(agent, config.logical_x == 1920 && config.logical_y == 0 &&
+                     config.logical_width == 1920U && config.logical_height == 1080U &&
+                     config.scale_numerator == 1U && config.scale_denominator == 1U);
+        agent->output_config = true;
+        return true;
+    }
     case CW_MESSAGE_WINDOW_CREATE: {
         CwWindowCreate create;
 
-        CHECK(agent, agent->hello_ack);
+        CHECK(agent, agent->hello_ack && agent->output_config);
         CHECK(agent, cw_decode_window_create(payload, header->payload_length, &create));
         CHECK(agent, create.window_id == 1U && create.surface_width == 800U &&
                      create.surface_height == 600U);
@@ -205,8 +218,9 @@ int main(int argc, char **argv) {
     } else if (argc != 1) {
         fail("usage: scripted-agent [port]");
     }
-    agent = (ScriptedAgent){connect_to_server("127.0.0.1", port), 0U, 0U,
-                            false, false, false, false};
+    agent = (ScriptedAgent){
+        .fd = connect_to_server("127.0.0.1", port),
+    };
     if (agent.fd < 0 || !send_hello(&agent)) {
         fail("connect or hello");
     }

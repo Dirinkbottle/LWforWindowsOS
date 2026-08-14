@@ -23,11 +23,24 @@ struct AgentOptions {
     bool trace_damage = false;
 };
 
+bool enable_per_monitor_dpi_awareness() {
+    if (SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2) != FALSE) {
+        return true;
+    }
+    std::fprintf(stderr, "[init] SetProcessDpiAwarenessContext(PER_MONITOR_AWARE_V2) failed: "
+                         "Win32 error=%lu\n",
+                 static_cast<unsigned long>(GetLastError()));
+    return false;
+}
+
 class AgentApplication {
 public:
     bool initialize(HINSTANCE instance, const AgentOptions &options) {
         options_ = options;
         instance_ = instance;
+		if (!enable_per_monitor_dpi_awareness()) {
+			return false;
+		}
         if (!create_socket_window()) {
             std::fprintf(stderr, "[init] transport window creation failed: Win32 error=%lu\n",
                          static_cast<unsigned long>(GetLastError()));
@@ -112,7 +125,8 @@ private:
         const bool is_popup = create.parent_window_id != 0U;
         auto proxy = std::make_unique<ProxyWindow>();
 
-        if (create.window_id == 0U || find_window(create.window_id) != nullptr) {
+		if (!output_config_received_ || create.window_id == 0U ||
+		    find_window(create.window_id) != nullptr) {
             return false;
         }
         if (is_popup) {
@@ -124,6 +138,7 @@ private:
         }
         if (!proxy->create(instance_, &protocol_, owner, is_popup, options_.trace_input,
                            options_.trace_frame, options_.trace_damage) ||
+			!proxy->set_output_config(output_config_) ||
             !proxy->apply_create(create)) {
             return false;
         }
@@ -136,6 +151,28 @@ private:
         }
         return true;
     }
+
+	bool apply_output_config(const CwOutputConfig &config) {
+		if (config.logical_width == 0U || config.logical_height == 0U ||
+		    config.scale_numerator == 0U || config.scale_denominator == 0U) {
+			return false;
+		}
+		for (const auto &entry : windows_) {
+			if (!entry.second->set_output_config(config)) {
+				return false;
+			}
+		}
+		output_config_ = config;
+		output_config_received_ = true;
+		if (options_.trace_protocol) {
+			std::printf("[output config] logical-global=[%d,%d %ux%u] "
+						"physical-scale=%u/%u\n",
+						config.logical_x, config.logical_y, config.logical_width,
+						config.logical_height, config.scale_numerator,
+						config.scale_denominator);
+		}
+		return true;
+	}
 
     static bool protocol_callback(void *context, const CwHeader *header, const std::uint8_t *payload) {
         return static_cast<AgentApplication *>(context)->handle_protocol_message(*header, payload);
@@ -154,6 +191,11 @@ private:
                    ack.selected_version == CW_PROTOCOL_VERSION &&
                    (ack.pixel_format_mask & CW_PIXEL_FORMAT_MASK_BGRA8888) != 0U;
         }
+		case CW_MESSAGE_OUTPUT_CONFIG: {
+			CwOutputConfig config{};
+			return cw_decode_output_config(payload, header.payload_length, &config) &&
+				   apply_output_config(config);
+		}
         case CW_MESSAGE_WINDOW_CREATE: {
             CwWindowCreate create{};
             return cw_decode_window_create(payload, header.payload_length, &create) &&
@@ -179,22 +221,28 @@ private:
         }
         case CW_MESSAGE_WINDOW_PRESENT: {
             CwWindowPresent present{};
+			ProxyWindow *window;
+			Rect physical{};
+
             if (!cw_decode_window_present(payload, header.payload_length, &present)) {
                 return false;
             }
+			window = find_window(present.window_id);
+			if (window == nullptr || !window->apply_present(present)) {
+				return false;
+			}
+			physical = window->physical_destination();
             if (options_.trace_present) {
                 std::printf("[present apply] win=%llu seq=%llu src=[%d,%d %dx%d] "
-                            "dst=[%d,%d %dx%d] hwnd=[%d,%d %dx%d]\n",
+                            "logical-dst=[%d,%d %dx%d] physical-hwnd=[%d,%d %dx%d]\n",
                             static_cast<unsigned long long>(present.window_id),
                             static_cast<unsigned long long>(present.presentation_sequence),
                             present.source_x, present.source_y, present.source_w, present.source_h,
                             present.destination_x, present.destination_y,
                             present.destination_w, present.destination_h,
-                            present.destination_x, present.destination_y,
-                            present.destination_w, present.destination_h);
+							physical.x, physical.y, physical.w, physical.h);
             }
-            return find_window(present.window_id) != nullptr &&
-                   find_window(present.window_id)->apply_present(present);
+			return true;
         }
         case CW_MESSAGE_WINDOW_ACTIVATE: {
             CwWindowActivate activate{};
@@ -234,6 +282,8 @@ private:
     HWND socket_window_ = nullptr;
     AgentProtocol protocol_{};
     std::unordered_map<std::uint64_t, std::unique_ptr<ProxyWindow>> windows_{};
+	CwOutputConfig output_config_{};
+	bool output_config_received_ = false;
     int exit_code_ = EXIT_SUCCESS;
 };
 

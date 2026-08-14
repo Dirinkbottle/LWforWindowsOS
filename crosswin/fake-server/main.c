@@ -150,6 +150,21 @@ static bool send_hello_ack(Server *server) {
     return send_message(server, CW_MESSAGE_HELLO_ACK, payload, sizeof(payload));
 }
 
+/* The fake server has no Weston output, but v5 Windows Agents still need the
+ * same explicit logical/physical contract as the real exporter. Its historic
+ * scripted destinations are already output-local physical=logical pixels. */
+static bool send_output_config(Server *server) {
+	uint8_t payload[24] = {0};
+
+	cw_store_i32_le(payload, 1920);
+	cw_store_i32_le(payload + 4U, 0);
+	cw_store_u32_le(payload + 8U, 1920U);
+	cw_store_u32_le(payload + 12U, 1080U);
+	cw_store_u32_le(payload + 16U, 1U);
+	cw_store_u32_le(payload + 20U, 1U);
+	return send_message(server, CW_MESSAGE_OUTPUT_CONFIG, payload, sizeof(payload));
+}
+
 static bool send_create(Server *server) {
     uint8_t payload[24] = {0};
 
@@ -253,7 +268,8 @@ static bool send_destroy(Server *server) {
 static bool start_after_hello(Server *server) {
     CwPresentationState initial;
 
-    if (!send_hello_ack(server) || !send_create(server) || !send_frame(server)) {
+	if (!send_hello_ack(server) || !send_output_config(server) ||
+	    !send_create(server) || !send_frame(server)) {
         return false;
     }
     if (server->options.script_stage2) {

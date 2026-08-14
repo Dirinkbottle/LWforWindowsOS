@@ -45,16 +45,21 @@ if errorlevel 1 (
 )
 
 echo.
-echo [1/2] Compiling shared protocol implementation...
+echo [1/3] Compiling shared protocol implementation...
 cl /nologo /std:c11 /W4 /WX /c common\protocol.c /Fo"build\protocol.obj"
 if errorlevel 1 goto :failed
 
-echo [2/2] Compiling and linking Windows Agent...
-cl /nologo /std:c++17 /W4 /WX /EHsc /Icommon /Iwindows-agent ^
+echo [2/3] Compiling shared Geometry Oracle...
+cl /nologo /std:c11 /W4 /WX /c ..\geometry\geometry.c /Fo"build\geometry.obj"
+if errorlevel 1 goto :failed
+
+echo [3/3] Compiling and linking Windows Agent...
+cl /nologo /std:c++17 /W4 /WX /EHsc /Icommon /Iwindows-agent /I..\geometry ^
   windows-agent\main.cpp ^
   windows-agent\protocol.cpp ^
   windows-agent\proxy_window.cpp ^
   build\protocol.obj ^
+  build\geometry.obj ^
   /link ws2_32.lib user32.lib gdi32.lib ^
   /out:build\crosswin-agent.exe
 if errorlevel 1 goto :failed

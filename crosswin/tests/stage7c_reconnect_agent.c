@@ -71,6 +71,13 @@ static bool on_message(void *context, const CwHeader *header, const uint8_t *pay
 		round->hello = true;
 		return true;
 	}
+	case CW_MESSAGE_OUTPUT_CONFIG: {
+		CwOutputConfig config;
+
+		return round->hello && cw_decode_output_config(payload,
+			header->payload_length, &config) && config.scale_numerator == 1U &&
+			config.scale_denominator == 1U;
+	}
 	case CW_MESSAGE_WINDOW_CREATE: {
 		CwWindowCreate create;
 		uint8_t bit;

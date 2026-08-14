@@ -33,6 +33,8 @@ ProxyWindow::ProxyWindow()
       frame_sequence_(0U),
       framebuffer_{},
       presentation_{},
+      output_scale_{1U, 1U},
+      physical_destination_{},
       pressed_button_mask_(0U),
       tracking_mouse_(false),
       trace_input_(false),
@@ -80,10 +82,15 @@ void ProxyWindow::destroy() {
     pressed_button_mask_ = 0U;
     tracking_mouse_ = false;
     is_popup_ = false;
+    physical_destination_ = Rect{};
 }
 
 HWND ProxyWindow::hwnd() const {
     return hwnd_;
+}
+
+Rect ProxyWindow::physical_destination() const {
+    return physical_destination_;
 }
 
 bool ProxyWindow::owns_window(std::uint64_t window_id) const {
@@ -102,6 +109,19 @@ bool ProxyWindow::bring_to_front() {
      * may still naturally cover the whole Crosswin group. */
     return SetWindowPos(hwnd_, HWND_TOP, 0, 0, 0, 0,
                         SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE) != FALSE;
+}
+
+bool ProxyWindow::set_output_config(const CwOutputConfig &config) {
+    const Scale scale{config.scale_numerator, config.scale_denominator};
+
+    if (!scale_is_valid(scale)) {
+        return false;
+    }
+    output_scale_ = scale;
+    /* OUTPUT_CONFIG is sent before CREATE on every connection. Updating an
+     * already-visible proxy is nevertheless well-defined for a future output
+     * reconfiguration: redraw it using the new physical coverage. */
+    return !presentation_.visible || framebuffer_.empty() || update_layered_window();
 }
 
 bool ProxyWindow::apply_create(const CwWindowCreate &create) {
@@ -252,6 +272,8 @@ bool ProxyWindow::apply_damage(const CwWindowDamage &damage) {
 }
 
 bool ProxyWindow::apply_present(const CwWindowPresent &present) {
+    Rect logical_destination{};
+
     if (!owns_window(present.window_id) || present.source_x < 0 || present.source_y < 0 ||
         present.source_w < 0 || present.source_h < 0 || present.destination_w != present.source_w ||
         present.destination_h != present.source_h ||
@@ -261,9 +283,17 @@ bool ProxyWindow::apply_present(const CwWindowPresent &present) {
     }
     presentation_ = present;
     if (!present.visible) {
+		physical_destination_ = Rect{};
         ShowWindow(hwnd_, SW_HIDE);
         return protocol_->send_present_ack(present.window_id, present.presentation_sequence);
     }
+	logical_destination = Rect{present.destination_x, present.destination_y,
+				   present.destination_w, present.destination_h};
+	if (!logical_rect_to_physical(logical_destination, output_scale_,
+				      &physical_destination_) ||
+	    rect_is_empty(physical_destination_)) {
+		return false;
+	}
     if (!update_layered_window()) {
         return false;
     }
@@ -271,11 +301,12 @@ bool ProxyWindow::apply_present(const CwWindowPresent &present) {
 }
 
 bool ProxyWindow::update_layered_window() {
-    BITMAPINFO info{};
+    BITMAPINFO target_info{};
+    BITMAPINFO source_info{};
     BLENDFUNCTION blend{AC_SRC_OVER, 0U, 255U, AC_SRC_ALPHA};
-    POINT destination{presentation_.destination_x, presentation_.destination_y};
+    POINT destination{physical_destination_.x, physical_destination_.y};
     POINT source{0, 0};
-    SIZE size{presentation_.destination_w, presentation_.destination_h};
+    SIZE size{physical_destination_.w, physical_destination_.h};
     HDC screen = nullptr;
     HDC memory = nullptr;
     HBITMAP bitmap = nullptr;
@@ -285,7 +316,7 @@ bool ProxyWindow::update_layered_window() {
     DWORD error = ERROR_SUCCESS;
 
     if (hwnd_ == nullptr || framebuffer_.empty() || !presentation_.visible ||
-        presentation_.destination_w <= 0 || presentation_.destination_h <= 0 ||
+        physical_destination_.w <= 0 || physical_destination_.h <= 0 ||
         presentation_.source_w != presentation_.destination_w ||
         presentation_.source_h != presentation_.destination_h) {
         return false;
@@ -295,18 +326,24 @@ bool ProxyWindow::update_layered_window() {
      * SetWindowPos(..., SWP_SHOWWINDOW), so omitting this left every first
      * per-pixel-alpha proxy HWND hidden on the Windows desktop. */
     if (!IsWindowVisible(hwnd_) &&
-        !SetWindowPos(hwnd_, HWND_TOP, presentation_.destination_x,
-                      presentation_.destination_y, presentation_.destination_w,
-                      presentation_.destination_h, SWP_NOACTIVATE | SWP_SHOWWINDOW)) {
+        !SetWindowPos(hwnd_, HWND_TOP, physical_destination_.x,
+                      physical_destination_.y, physical_destination_.w,
+                      physical_destination_.h, SWP_NOACTIVATE | SWP_SHOWWINDOW)) {
         error = GetLastError();
         goto out;
     }
-    info.bmiHeader.biSize = sizeof(info.bmiHeader);
-    info.bmiHeader.biWidth = presentation_.destination_w;
-    info.bmiHeader.biHeight = -presentation_.destination_h;
-    info.bmiHeader.biPlanes = 1;
-    info.bmiHeader.biBitCount = 32;
-    info.bmiHeader.biCompression = BI_RGB;
+    target_info.bmiHeader.biSize = sizeof(target_info.bmiHeader);
+    target_info.bmiHeader.biWidth = physical_destination_.w;
+    target_info.bmiHeader.biHeight = -physical_destination_.h;
+    target_info.bmiHeader.biPlanes = 1;
+    target_info.bmiHeader.biBitCount = 32;
+    target_info.bmiHeader.biCompression = BI_RGB;
+    source_info.bmiHeader.biSize = sizeof(source_info.bmiHeader);
+    source_info.bmiHeader.biWidth = static_cast<LONG>(surface_width_);
+    source_info.bmiHeader.biHeight = -static_cast<LONG>(surface_height_);
+    source_info.bmiHeader.biPlanes = 1;
+    source_info.bmiHeader.biBitCount = 32;
+    source_info.bmiHeader.biCompression = BI_RGB;
     screen = GetDC(nullptr);
     if (screen == nullptr) {
         error = GetLastError();
@@ -317,22 +354,21 @@ bool ProxyWindow::update_layered_window() {
         error = GetLastError();
         goto out;
     }
-    bitmap = CreateDIBSection(memory, &info, DIB_RGB_COLORS, &bits, nullptr, 0U);
+    bitmap = CreateDIBSection(memory, &target_info, DIB_RGB_COLORS, &bits, nullptr, 0U);
     if (bitmap == nullptr || bits == nullptr) {
         error = GetLastError();
         goto out;
     }
-    for (int row = 0; row < presentation_.source_h; ++row) {
-        const std::size_t from =
-            static_cast<std::size_t>(presentation_.source_y + row) * stride_ +
-            static_cast<std::size_t>(presentation_.source_x) * 4U;
-        const std::size_t to = static_cast<std::size_t>(row) *
-                               static_cast<std::size_t>(presentation_.source_w) * 4U;
-        std::memcpy(static_cast<std::uint8_t *>(bits) + to, framebuffer_.data() + from,
-                    static_cast<std::size_t>(presentation_.source_w) * 4U);
-    }
     old_bitmap = SelectObject(memory, bitmap);
     if (old_bitmap == nullptr || old_bitmap == HGDI_ERROR) {
+        error = GetLastError();
+        goto out;
+    }
+    if (StretchDIBits(memory, 0, 0, physical_destination_.w, physical_destination_.h,
+                      presentation_.source_x, presentation_.source_y,
+                      presentation_.source_w, presentation_.source_h,
+                      framebuffer_.data(), &source_info, DIB_RGB_COLORS,
+                      SRCCOPY) == static_cast<int>(GDI_ERROR)) {
         error = GetLastError();
         goto out;
     }
@@ -356,12 +392,14 @@ out:
     }
     if (!ok && trace_frame_) {
         std::printf("[layered present failed] win=%llu error=%lu src=[%d,%d %dx%d] "
-                    "dst=[%d,%d %dx%d]\n",
+                    "logical-dst=[%d,%d %dx%d] physical-dst=[%d,%d %dx%d]\n",
                     static_cast<unsigned long long>(window_id_),
                     static_cast<unsigned long>(error), presentation_.source_x,
                     presentation_.source_y, presentation_.source_w, presentation_.source_h,
                     presentation_.destination_x, presentation_.destination_y,
-                    presentation_.destination_w, presentation_.destination_h);
+                    presentation_.destination_w, presentation_.destination_h,
+                    physical_destination_.x, physical_destination_.y,
+                    physical_destination_.w, physical_destination_.h);
     }
     return ok;
 }
@@ -382,41 +420,56 @@ bool ProxyWindow::apply_destroy(std::uint64_t window_id) {
     stride_ = 0U;
     frame_sequence_ = 0U;
     presentation_ = CwWindowPresent{};
+    physical_destination_ = Rect{};
     DestroyWindow(hwnd_);
     hwnd_ = nullptr;
     return true;
 }
 
-CwPointerLocation ProxyWindow::make_pointer_location(LPARAM lparam) const {
-    return CwPointerLocation{
-        window_id_,
-        presentation_.presentation_sequence,
-        GET_X_LPARAM(lparam),
-        GET_Y_LPARAM(lparam),
-        presentation_.destination_x + GET_X_LPARAM(lparam),
-        presentation_.destination_y + GET_Y_LPARAM(lparam),
+bool ProxyWindow::make_pointer_location(Point physical_client,
+                                        CwPointerLocation *location) const {
+    const Rect logical_fragment{presentation_.destination_x, presentation_.destination_y,
+                                presentation_.destination_w, presentation_.destination_h};
+    Point logical_client{};
+    std::int64_t output_x;
+    std::int64_t output_y;
+
+    if (location == nullptr || !presentation_.visible ||
+        !physical_fragment_local_to_logical(logical_fragment, output_scale_,
+                                            physical_client, &logical_client)) {
+        return false;
+    }
+    output_x = static_cast<std::int64_t>(presentation_.destination_x) + logical_client.x;
+    output_y = static_cast<std::int64_t>(presentation_.destination_y) + logical_client.y;
+    if (output_x < std::numeric_limits<std::int32_t>::min() ||
+        output_x > std::numeric_limits<std::int32_t>::max() ||
+        output_y < std::numeric_limits<std::int32_t>::min() ||
+        output_y > std::numeric_limits<std::int32_t>::max()) {
+        return false;
+    }
+    *location = CwPointerLocation{
+        window_id_, presentation_.presentation_sequence,
+        logical_client.x, logical_client.y,
+        static_cast<std::int32_t>(output_x), static_cast<std::int32_t>(output_y),
         timestamp_ms(),
     };
+    return true;
 }
 
-CwPointerLocation ProxyWindow::current_cursor_location() const {
+bool ProxyWindow::current_cursor_location(CwPointerLocation *location) const {
     POINT screen{};
     POINT client{};
-    POINT origin{};
 
-    GetCursorPos(&screen);
+    if (location == nullptr || !GetCursorPos(&screen)) {
+        return false;
+    }
     client = screen;
-    ScreenToClient(hwnd_, &client);
-    ClientToScreen(hwnd_, &origin);
-    return CwPointerLocation{
-        window_id_,
-        presentation_.presentation_sequence,
-        client.x,
-        client.y,
-        screen.x - origin.x + presentation_.destination_x,
-        screen.y - origin.y + presentation_.destination_y,
-        timestamp_ms(),
-    };
+    if (!ScreenToClient(hwnd_, &client)) {
+        return false;
+    }
+    return make_pointer_location(
+        Point{static_cast<std::int32_t>(client.x), static_cast<std::int32_t>(client.y)},
+        location);
 }
 
 void ProxyWindow::trace_location(const char *event, const CwPointerLocation &location) const {
@@ -454,7 +507,10 @@ void ProxyWindow::send_button(UINT message, WPARAM wparam, LPARAM lparam) {
     if (message == WM_LBUTTONUP || message == WM_RBUTTONUP || message == WM_MBUTTONUP) {
         state = CW_BUTTON_RELEASED;
     }
-    event.location = make_pointer_location(lparam);
+    if (!make_pointer_location(
+            Point{GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)}, &event.location)) {
+        return;
+    }
     event.button = button;
     event.state = state;
     if (state == CW_BUTTON_PRESSED) {
@@ -476,18 +532,14 @@ void ProxyWindow::send_button(UINT message, WPARAM wparam, LPARAM lparam) {
 void ProxyWindow::send_wheel(WPARAM wparam, LPARAM lparam) {
     POINT screen{GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
     POINT client = screen;
-    POINT origin{0, 0};
     CwPointerWheel wheel{};
 
-    ScreenToClient(hwnd_, &client);
-    ClientToScreen(hwnd_, &origin);
-    wheel.location = CwPointerLocation{
-        window_id_, presentation_.presentation_sequence,
-        client.x, client.y,
-        screen.x - origin.x + presentation_.destination_x,
-        screen.y - origin.y + presentation_.destination_y,
-        timestamp_ms(),
-    };
+    if (!ScreenToClient(hwnd_, &client) ||
+        !make_pointer_location(
+            Point{static_cast<std::int32_t>(client.x), static_cast<std::int32_t>(client.y)},
+            &wheel.location)) {
+        return;
+    }
     wheel.delta_x = 0;
     wheel.delta_y = GET_WHEEL_DELTA_WPARAM(wparam);
     trace_location("POINTER_WHEEL", wheel.location);
@@ -509,7 +561,7 @@ void ProxyWindow::paint(HDC dc) {
     bitmap.bmiHeader.biPlanes = 1;
     bitmap.bmiHeader.biBitCount = 32;
     bitmap.bmiHeader.biCompression = BI_RGB;
-    StretchDIBits(dc, 0, 0, presentation_.destination_w, presentation_.destination_h,
+    StretchDIBits(dc, 0, 0, physical_destination_.w, physical_destination_.h,
                   presentation_.source_x, presentation_.source_y,
                   presentation_.source_w, presentation_.source_h,
                   framebuffer_.data(), &bitmap, DIB_RGB_COLORS, SRCCOPY);
@@ -526,14 +578,19 @@ LRESULT ProxyWindow::handle_message(UINT message, WPARAM wparam, LPARAM lparam) 
     }
     case WM_MOUSEMOVE: {
         CwPointerMotion motion{};
+		CwPointerLocation location{};
+
+		if (!make_pointer_location(
+				Point{GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)}, &location)) {
+			return 0;
+		}
         if (!tracking_mouse_) {
             TRACKMOUSEEVENT tracking{sizeof(tracking), TME_LEAVE, hwnd_, 0U};
             tracking_mouse_ = TrackMouseEvent(&tracking) != FALSE;
-            const CwPointerLocation location = make_pointer_location(lparam);
             trace_location("POINTER_ENTER", location);
             (void)protocol_->send_pointer_location(CW_MESSAGE_POINTER_ENTER, location);
         }
-        motion.location = make_pointer_location(lparam);
+        motion.location = location;
         motion.button_mask = pressed_button_mask_;
         trace_location("POINTER_MOTION", motion.location);
         if (trace_input_) {
@@ -545,9 +602,11 @@ LRESULT ProxyWindow::handle_message(UINT message, WPARAM wparam, LPARAM lparam) 
     case WM_MOUSELEAVE:
         tracking_mouse_ = false;
         {
-            const CwPointerLocation location = current_cursor_location();
-            trace_location("POINTER_LEAVE", location);
-            (void)protocol_->send_pointer_location(CW_MESSAGE_POINTER_LEAVE, location);
+			CwPointerLocation location{};
+			if (current_cursor_location(&location)) {
+				trace_location("POINTER_LEAVE", location);
+				(void)protocol_->send_pointer_location(CW_MESSAGE_POINTER_LEAVE, location);
+			}
         }
         return 0;
     case WM_LBUTTONDOWN:

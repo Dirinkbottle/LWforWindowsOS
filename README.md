@@ -1,20 +1,19 @@
 # CrossWin：编译、运行与验证教程
 
-本仓库是 Linux Wayland ↔ Windows KVM 跨系统窗口项目的前两个原型阶段。
-当前只验证一条受限链路：Linux 发送完整 BGRA8888 framebuffer 和原子
-presentation，Windows 用无边框原生 `HWND` 显示指定 source crop；Windows
-鼠标事件再通过 TCP 回传 Linux，由 Linux 保存的 presentation history 和
-Geometry Oracle 解释坐标。
+本仓库已完成 Stage 1～7D：Linux Weston 保有窗口、位置、激活和拖动的 canonical
+state；Windows Agent 为每个 Linux toplevel/popup 创建独立原生 HWND，通过 TCP
+接收 framebuffer、damage 与 presentation，并把鼠标事件回传 Linux。
 
-当前没有 Wayland、Weston、wlroots、D3D、OpenGL、共享内存、视频编码或多窗口
-实现。一个 remote output、一个窗口、scale=1、TCP，是当前唯一支持的配置。
+当前支持 wl_shm、subsurface、alpha、popup、多窗口生命周期、Linux-owned drag、
+CWNP v5 以及有理数逻辑→物理 DPI presentation。GPU/dmabuf、共享内存高性能传输
+和最终压力恢复仍属后续阶段。
 
 ## 目录说明
 
 ```text
 geometry/                  Stage 1：纯 C11 Geometry Oracle
 crosswin/
-├── common/                CWNP v1 显式 little-endian 协议与 stream decoder
+├── common/                CWNP v5 显式 little-endian 协议与 stream decoder
 ├── fake-server/           Linux TCP fake server、测试图案、presentation history
 ├── windows-agent/         C++17 Win32 + Winsock + GDI proxy HWND
 ├── tests/                 协议、presentation、pointer round-trip 测试
@@ -148,20 +147,22 @@ crosswin\build\crosswin-agent.exe
 
 也可以从“x64 Native Tools Command Prompt for VS 2022”手动执行以下命令。
 
-先以 C11 编译共享协议实现：
+先以 C11 编译共享协议和 Geometry Oracle：
 
 ```bat
 cl /nologo /std:c11 /W4 /WX /c common\protocol.c /Fobuild\protocol.obj
+cl /nologo /std:c11 /W4 /WX /c ..\geometry\geometry.c /Fobuild\geometry.obj
 ```
 
 再以 C++17 编译链接 Agent：
 
 ```bat
-cl /nologo /std:c++17 /W4 /WX /EHsc /Icommon /Iwindows-agent ^
+cl /nologo /std:c++17 /W4 /WX /EHsc /Icommon /Iwindows-agent /I..\geometry ^
   windows-agent\main.cpp ^
   windows-agent\protocol.cpp ^
   windows-agent\proxy_window.cpp ^
   build\protocol.obj ^
+  build\geometry.obj ^
   /link ws2_32.lib user32.lib gdi32.lib ^
   /out:build\crosswin-agent.exe
 ```
@@ -309,8 +310,8 @@ Linux 日志应显示：
 [present apply] Windows 应用的 src/dst/seq
 ```
 
-重点确认 `source.w == destination.w` 且 `source.h == destination.h`，因为此阶段
-禁止缩放。
+`src/dst` 始终是逻辑尺寸；若启用了 Stage 7D 的 output scale，Windows 日志还会
+显示相应的 `physical-hwnd`。不要把 logical `--crosswin-x` 改成 Windows 物理像素。
 
 ### 点击后 crosshair 有偏移
 
@@ -326,9 +327,12 @@ client + source origin = surface
 
 ## 六、当前限制
 
-- 尚未进行 Windows VM 上的实际 `/W4 /WX` 编译与视觉验收；应按本文完成该步骤。
-- 只支持一个 remote output、一个 proxy window、BGRA8888、scale=1。
-- 没有 Wayland、键盘/IME、剪贴板、视频编码、GPU renderer 或跨系统鼠标 ownership。
+- 目前只有一个 remote Windows output；它可以放在 Linux logical desktop 的 right、
+  left、above 或 below。
+- Wayland export 仍限支持的 wl_shm 场景；GPU/dmabuf 在 Stage 7E 实现。
+- 没有键盘/IME、剪贴板、视频编码或跨系统鼠标 ownership；Deskflow 仍负责物理
+  键盘/鼠标跨机。
 - 这不是 production transport：没有 TLS、认证、重连协议或 damage/frame compression。
 
 详细协议、测试结构和 Windows 视觉检查说明也见 [crosswin/README.md](crosswin/README.md)。
+Stage 7D 的完整中文命令和 Windows Gate 见 [docs/stage7d-dpi-test.txt](docs/stage7d-dpi-test.txt)。

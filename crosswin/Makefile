@@ -6,9 +6,9 @@ COMMON = common/protocol.c
 SESSION = fake-server/pattern.c fake-server/session.c
 BINDIR = build
 
-.PHONY: all test integration input-integration sanitize clean
+.PHONY: all test integration input-integration stage7d-integration sanitize clean
 
-all: $(BINDIR)/fake-server $(BINDIR)/protocol_test $(BINDIR)/session_test $(BINDIR)/scripted-agent $(BINDIR)/input-agent $(BINDIR)/stage5-agent $(BINDIR)/stage6-agent $(BINDIR)/stage7a-agent $(BINDIR)/stage7b-agent $(BINDIR)/stage7b-popup-agent $(BINDIR)/stage7c-agent $(BINDIR)/stage7c-stress-agent $(BINDIR)/stage7c-reconnect-agent
+all: $(BINDIR)/fake-server $(BINDIR)/protocol_test $(BINDIR)/session_test $(BINDIR)/scripted-agent $(BINDIR)/input-agent $(BINDIR)/stage5-agent $(BINDIR)/stage6-agent $(BINDIR)/stage7a-agent $(BINDIR)/stage7b-agent $(BINDIR)/stage7b-popup-agent $(BINDIR)/stage7c-agent $(BINDIR)/stage7c-stress-agent $(BINDIR)/stage7c-reconnect-agent $(BINDIR)/stage7d-geometry-agent
 
 $(BINDIR):
 	mkdir -p $@
@@ -52,6 +52,9 @@ $(BINDIR)/stage7c-stress-agent: $(COMMON) tests/stage7c_stress_agent.c | $(BINDI
 $(BINDIR)/stage7c-reconnect-agent: $(COMMON) tests/stage7c_reconnect_agent.c | $(BINDIR)
 	$(CC) $(CFLAGS) $^ -o $@
 
+$(BINDIR)/stage7d-geometry-agent: $(COMMON) tests/stage7d_geometry_agent.c | $(BINDIR)
+	$(CC) $(CFLAGS) $^ -o $@
+
 test: $(BINDIR)/protocol_test $(BINDIR)/session_test
 	./$(BINDIR)/protocol_test
 	./$(BINDIR)/session_test
@@ -62,6 +65,9 @@ integration: $(BINDIR)/fake-server $(BINDIR)/scripted-agent
 
 input-integration: $(BINDIR)/fake-server $(BINDIR)/input-agent
 	./$(BINDIR)/fake-server --listen 127.0.0.1 --port 44602 --interactive --trace-present --trace-input > input-server.log 2>&1 & crosswin_input_server_pid=$$!; ./$(BINDIR)/input-agent; test_status=$$?; wait $$crosswin_input_server_pid; server_status=$$?; test $$test_status -eq 0 -a $$server_status -eq 0
+
+stage7d-integration: all
+	./tests/stage7d_integration.sh
 
 sanitize:
 	$(MAKE) clean

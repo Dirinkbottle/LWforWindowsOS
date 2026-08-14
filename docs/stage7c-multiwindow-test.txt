@@ -1,10 +1,11 @@
 Stage 7C：多窗口、生命周期、激活与相对 z-order 验证
 ====================================================
 
-本阶段将 CWNP 升级到 v4。新增 Linux → Windows 的 8 字节
-`WINDOW_ACTIVATE { window_id }`：它只表示 Weston desktop-shell 已完成
-canonical 激活/层级更新；Windows Agent 仅将同 ID 的 presentation HWND 放到
-Crosswin 窗口组前方，不保存或推断任何 Linux 几何状态。
+Stage 7C 引入 `WINDOW_ACTIVATE { window_id }`：它只表示 Weston desktop-shell
+已完成 canonical 激活/层级更新；Windows Agent 仅将同 ID 的 presentation HWND
+放到 Crosswin 窗口组前方，不保存或推断任何 Linux 几何状态。当前代码已在 Stage
+7D 升级到 CWNP v5；连接后会额外先收到 `OUTPUT_CONFIG`，但默认 1/1 时 Stage 7C
+的逻辑几何、生命周期与 owned-HWND 语义不变。
 
 每个 `xdg_toplevel` 都有独立、单调递增且不会在进程生命周期内复用的
 window_id 与 HWND。`xdg_popup` 仍维持 Stage 7B 的 owned HWND 关系。
@@ -103,7 +104,7 @@ window_id 严格为 1..100；任何 stale HWND/对象、ID 重用或消息顺序
 ---------------------------------
 
 1. 同步整个最新 `crosswin/` 到 Windows，并双击
-   `crosswin\build-windows-agent.cmd`。必须是 CWNP v4；旧 v3 exe 会在 HELLO
+   `crosswin\build-windows-agent.cmd`。必须是 CWNP v5；旧 v4 exe 会在 HELLO
    阶段被拒绝。
 2. 启动上面 C1 的 Weston，但将 socket 改为 `crosswin-7c-win`、端口改为
    `44600`。

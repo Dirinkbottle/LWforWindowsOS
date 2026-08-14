@@ -2,6 +2,7 @@
 #define CROSSWIN_WINDOWS_AGENT_PROXY_WINDOW_HPP
 
 #include "protocol.hpp"
+#include "../../geometry/geometry.h"
 
 #include <windows.h>
 
@@ -22,8 +23,10 @@ public:
                 bool trace_input, bool trace_frame, bool trace_damage);
     void destroy();
     HWND hwnd() const;
+    Rect physical_destination() const;
     bool owns_window(std::uint64_t window_id) const;
     bool bring_to_front();
+    bool set_output_config(const CwOutputConfig &config);
 
     bool apply_create(const CwWindowCreate &create);
     bool apply_resize(const CwWindowResize &resize);
@@ -36,8 +39,9 @@ public:
 
 private:
     static LRESULT CALLBACK window_proc(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam);
-    CwPointerLocation make_pointer_location(LPARAM lparam) const;
-    CwPointerLocation current_cursor_location() const;
+    bool make_pointer_location(Point physical_client,
+                               CwPointerLocation *location) const;
+    bool current_cursor_location(CwPointerLocation *location) const;
     void trace_location(const char *event, const CwPointerLocation &location) const;
     void send_button(UINT message, WPARAM wparam, LPARAM lparam);
     void send_wheel(WPARAM wparam, LPARAM lparam);
@@ -55,6 +59,8 @@ private:
     std::uint64_t frame_sequence_;
     std::vector<std::uint8_t> framebuffer_;
     CwWindowPresent presentation_;
+    Scale output_scale_;
+    Rect physical_destination_;
     std::uint32_t pressed_button_mask_;
     bool tracking_mouse_;
     bool trace_input_;

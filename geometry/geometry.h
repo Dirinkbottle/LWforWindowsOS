@@ -14,6 +14,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef struct {
     int32_t x;
     int32_t y;
@@ -158,5 +162,23 @@ bool logical_point_to_physical(Point logical, Scale scale, Point *physical);
  * the scale or input is invalid or the physical Rect cannot be represented.
  */
 bool logical_rect_to_physical(Rect logical, Scale scale, Rect *physical);
+
+/*
+ * Converts a physical HWND-client point back to a logical presented-fragment
+ * point. `physical_local` is relative to the physical top-left returned by
+ * logical_rect_to_physical(logical_fragment, scale, ...), and may be outside
+ * the fragment while Win32 mouse capture is active. The conversion uses the
+ * same half-open floor/ceil coverage policy as logical_rect_to_physical: no
+ * float rounding or per-caller inverse scale is permitted.
+ */
+bool physical_fragment_local_to_logical(
+    Rect logical_fragment,
+    Scale scale,
+    Point physical_local,
+    Point *logical_local);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

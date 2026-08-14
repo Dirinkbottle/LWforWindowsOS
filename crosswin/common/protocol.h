@@ -2,7 +2,7 @@
 #define CROSSWIN_PROTOCOL_H
 
 /*
- * CrossWin Network Protocol (CWNP), version 4.
+ * CrossWin Network Protocol (CWNP), version 5.
  *
  * Every integer is serialized explicitly in little-endian byte order.  No
  * native C/C++ struct is ever used as a wire message.  TCP is a byte stream:
@@ -19,7 +19,7 @@ extern "C" {
 
 enum {
     CW_PROTOCOL_MAGIC = 0x504E5743U, /* Wire bytes: 'C', 'W', 'N', 'P'. */
-    CW_PROTOCOL_VERSION = 4U,
+    CW_PROTOCOL_VERSION = 5U,
     CW_HEADER_SIZE = 24U,
     CW_MAX_PAYLOAD = 64U * 1024U * 1024U,
     CW_PIXEL_FORMAT_BGRA8888 = 1U,
@@ -42,6 +42,8 @@ typedef enum {
     CW_MESSAGE_WINDOW_RESIZE = 17,
     /* Linux canonical desktop-shell activation/stacking notification. */
     CW_MESSAGE_WINDOW_ACTIVATE = 18,
+    /* Linux logical remote-output geometry and physical presentation scale. */
+    CW_MESSAGE_OUTPUT_CONFIG = 19,
     CW_MESSAGE_POINTER_ENTER = 30,
     CW_MESSAGE_POINTER_LEAVE = 31,
     CW_MESSAGE_POINTER_MOTION = 32,
@@ -161,6 +163,18 @@ typedef struct {
 typedef struct {
     uint64_t window_id;
 } CwWindowActivate;
+
+/* The output position and dimensions are global logical coordinates. The
+ * Windows proxy presents output-local rectangles in physical pixels at
+ * scale_numerator / scale_denominator. */
+typedef struct {
+    int32_t logical_x;
+    int32_t logical_y;
+    uint32_t logical_width;
+    uint32_t logical_height;
+    uint32_t scale_numerator;
+    uint32_t scale_denominator;
+} CwOutputConfig;
 
 typedef struct {
     uint64_t window_id;
@@ -284,6 +298,8 @@ bool cw_decode_window_present_ack(
     const uint8_t *payload, uint32_t length, CwWindowPresentAck *out);
 bool cw_decode_window_activate(const uint8_t *payload, uint32_t length,
                                CwWindowActivate *out);
+bool cw_decode_output_config(const uint8_t *payload, uint32_t length,
+                             CwOutputConfig *out);
 bool cw_decode_pointer_location(const uint8_t *payload, uint32_t length, CwPointerLocation *out);
 bool cw_decode_pointer_motion(const uint8_t *payload, uint32_t length, CwPointerMotion *out);
 bool cw_decode_pointer_button(

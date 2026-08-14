@@ -1,0 +1,169 @@
+Stage 7D：DPI、分数缩放与任意 remote output 位置验证
+========================================================
+
+本阶段的坐标规则
+----------------
+
+Weston 的 global desktop 始终使用**逻辑坐标**。`--crosswin-x`、
+`--crosswin-y`、`WINDOW_PRESENT.destination_*`、Linux 端 pointer input 都是
+逻辑坐标，绝不能填 Windows 的物理像素数。
+
+CWNP v5 在 HELLO_ACK 后、任何 WINDOW_CREATE 前发送：
+
+    OUTPUT_CONFIG {
+      logical_global = [x, y width x height],
+      physical_scale = numerator / denominator
+    }
+
+Windows Agent 使用 Stage 1 Geometry Oracle，而不是 float：逻辑矩形左/上边缘
+向下取整、右/下边缘向上取整。因此逻辑 `dst=[80,80 800x600]` 在 150% 下必定成为
+物理 `HWND=[120,120 1200x900]`。Windows 输入的 physical client point 会用同一
+半开区间规则逆映射回 CWNP 逻辑 client/output point。
+
+Agent 在创建任何 HWND 前调用 Per-Monitor DPI Awareness V2；Windows 不应再对
+Crosswin 内容做兼容性二次缩放。需要 Windows 10 1703 或更新版本。
+
+一、Linux 自动验证
+------------------
+
+先构建：
+
+    make -C crosswin all test integration input-integration
+    ninja -C weston/build-stage4 \
+      crosswin/crosswin-stage4.so \
+      crosswin/crosswin-stage5-client \
+      crosswin/crosswin-stage7a-client \
+      crosswin/crosswin-stage7b-popup-client
+
+宿主 Wayland socket 默认要求 `wayland-0`。若 `ls "$XDG_RUNTIME_DIR"/wayland-*`
+显示别的名称，替换下面的值：
+
+    export WAYLAND_DISPLAY=wayland-0
+    make -C crosswin stage7d-integration
+
+成功标志：
+
+    stage7d logical geometry and directional drag integration: PASS
+
+该脚本启动十次嵌套 Weston，真实验证以下内容：
+
+* right / left / above / below 四种输出位置；
+* 1px 与 50/50 的逻辑裁剪；
+* 1/1、5/4、3/2、2/1 有理缩放配置；
+* right、left 两个方向的真实 `xdg_toplevel.move`，包括 50/50、1px、隐藏和恢复；
+* `OUTPUT_CONFIG` 的发送顺序与比例。
+
+上下方向的 1px/50/50 使用精确的 Linux-owned initial logical geometry。
+这样不会被 desktop-shell 为普通 toplevel 保留可见标题栏的策略干扰，测试的是
+实际 exporter 的 canonical view geometry 与 Geometry Oracle。
+
+二、Windows 必测（Stage 7D Gate）
+---------------------------------
+
+### 1. 同步并编译 v5 Agent
+
+把最新的 `crosswin/` 和 `geometry/` 都同步到 Windows 仓库副本。在
+`crosswin` 目录双击：
+
+    build-windows-agent.cmd
+
+脚本现在会编译 `common\protocol.c` **以及** `..\geometry\geometry.c`。旧的
+CWNP v4 exe 会在 HELLO 阶段被拒绝，不能混用。
+
+在 Windows 的“设置 → 系统 → 显示”中，将用于显示 Crosswin HWND 的实际显示器
+缩放设为 **150%**。本阶段先以单一 remote Windows output 为目标；Agent 启动若
+打印 DPI Awareness V2 错误，先升级 Windows 或检查进程兼容性设置。
+
+### 2. 150% remote-right 基准
+
+Linux 终端 A（以下假定嵌套宿主为 `wayland-0`、宽 1024 逻辑 px）：
+
+    export WAYLAND_DISPLAY=wayland-0
+    export CWROOT=/home/inkbottle/othersrc/LWforWindowsOS
+    export WESTON_MODULE_MAP="crosswin-stage4.so=$CWROOT/weston/build-stage4/crosswin/crosswin-stage4.so;wayland-backend.so=$CWROOT/weston/build-stage4/libweston/backend-wayland/wayland-backend.so;desktop-shell.so=$CWROOT/weston/build-stage4/desktop-shell/desktop-shell.so;weston-desktop-shell=$CWROOT/weston/build-stage4/clients/weston-desktop-shell;weston-keyboard=$CWROOT/weston/build-stage4/clients/weston-keyboard"
+
+    WESTON_MODULE_MAP="$WESTON_MODULE_MAP" "$CWROOT/weston/build-stage4/frontend/weston" \
+      --socket=crosswin-7d-win --backend=wayland-backend.so \
+      --modules=crosswin-stage4.so --use-pixman --no-config \
+      --crosswin-x=1024 --crosswin-y=0 \
+      --crosswin-scale-numerator=3 --crosswin-scale-denominator=2 \
+      --crosswin-export --crosswin-port=44600 \
+      --crosswin-trace-protocol --crosswin-trace-present --crosswin-trace-input
+
+`--crosswin-x=1024` 是 Linux 宿主输出的**逻辑**右边界；不是 Windows 分辨率。
+150% 只由 `3/2` 表示，不要把 x 改成 1536。
+
+Windows CMD：
+
+    build\crosswin-agent.exe --host 192.168.122.1 --port 44600 ^
+      --trace-protocol --trace-present --trace-input --trace-frame
+
+必须先看到类似：
+
+    [output config] logical-global=[1024,0 1920x1080] physical-scale=3/2
+
+Linux 终端 B：
+
+    WAYLAND_DISPLAY=crosswin-7d-win \
+      "$CWROOT/weston/build-stage4/crosswin/crosswin-stage5-client" --run-ms 120000
+
+通过条件：
+
+* Linux `present` 仍是逻辑 `dst=[80,80 800x600]`；
+* Windows 输出包含 `logical-dst=[80,80 800x600]` 与
+  `physical-hwnd=[120,120 1200x900]`；
+* 图案清晰、没有 Windows 自动再放大一次、没有模糊的双重缩放；
+* 在 HWND 客户区从左上量 **150 physical px** 点击，Agent 的 `client` 应约为
+  `100` logical px，Linux `--crosswin-trace-input` 的 `output-local` 应约为
+  `180`（dst 起点 80 + 100）。
+
+### 3. 缩放下的拖动、popup、resize
+
+仍使用上面的 150% Weston：
+
+1. 在 Windows proxy 顶部橙色 32 logical px 拖动条按住，缓慢向 Linux 侧拖动；
+   检查 Linux `present` 依次出现 50/50 的 `src=[400,0 400x600]`、1px 的
+   `src=[799,0 1x600]`，而 Windows 的 physical HWND 宽分别为 600 px、2 px。
+   Windows 不得在收到 Linux `WINDOW_PRESENT` 前自行移动 HWND。
+2. 另开 Linux 终端运行：
+
+       WAYLAND_DISPLAY=crosswin-7d-win \
+         "$CWROOT/weston/build-stage4/crosswin/crosswin-stage7b-popup-client" --run-ms 30000
+
+   检查 popup 仍是其 parent HWND 的 owned window；跨边界时 popup 的位置和尺寸
+   均按 3/2 物理比例变化，parent/child 关系不变。
+3. 再运行：
+
+       WAYLAND_DISPLAY=crosswin-7d-win \
+         "$CWROOT/weston/build-stage4/crosswin/crosswin-stage7a-client" --run-ms 1600
+
+   检查 800x600 → 640x480 的 resize 分别呈现为 1200x900 → 960x720 physical px，
+   没有 stale HWND、断线或鼠标偏移。
+
+### 4. 位置矩阵
+
+关闭并重启 Weston 后，只替换下列 logical 位置与比例。嵌套宿主仍为 1024x640
+logical px；每次都重连 Agent 并用 `crosswin-stage5-client --run-ms 30000` 观察。
+
+| remote 相对 Linux | 参数 | 重点检查 |
+| --- | --- | --- |
+| right | `--crosswin-x=1024 --crosswin-y=0 --crosswin-scale-numerator=1 --crosswin-scale-denominator=1` | 向左拖动的 50/50、1px |
+| left | `--crosswin-x=-1920 --crosswin-y=0 --crosswin-scale-numerator=3 --crosswin-scale-denominator=2` | 向右拖动的 50/50、1px |
+| above | `--crosswin-x=0 --crosswin-y=-1080 --crosswin-scale-numerator=5 --crosswin-scale-denominator=4` | 上边界的 50/50、1px popup 位置 |
+| below | `--crosswin-x=0 --crosswin-y=640 --crosswin-scale-numerator=2 --crosswin-scale-denominator=1` | 下边界的 50/50、1px resize 位置 |
+
+`5/4` 和 `2/1` 是有理数舍入路径的覆盖用例。实际 Windows 显示器若是 150%，
+remote-right 的 `3/2` 基准才是检查无双重缩放的主要 Gate。
+
+完成条件
+----------
+
+只有以下均通过才能输出：
+
+    STAGE 7D PASS
+
+* Linux 自动脚本 PASS；
+* Windows 150% 下 physical HWND 尺寸和鼠标逆映射正确；
+* right / left / above / below 的逻辑位置正确；
+* scale 下 popup、drag、resize 无错位；
+* 没有 Windows compatibility double scaling。

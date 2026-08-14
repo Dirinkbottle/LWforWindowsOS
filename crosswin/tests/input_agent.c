@@ -18,6 +18,7 @@ typedef struct {
     int fd;
     unsigned cases;
     unsigned frames;
+	bool received_output_config;
     bool received_initial_presentation;
     bool received_drag_presentation;
     bool done;
@@ -121,10 +122,24 @@ static bool on_message(void *context, const CwHeader *header, const uint8_t *pay
     InputAgent *agent = context;
 
     switch (header->type) {
-    case CW_MESSAGE_HELLO_ACK:
-        CHECK(agent, header->payload_length == 8U);
+    case CW_MESSAGE_HELLO_ACK: {
+        CwHelloAck ack;
+
+        CHECK(agent, cw_decode_hello_ack(payload, header->payload_length, &ack));
+        CHECK(agent, ack.selected_version == CW_PROTOCOL_VERSION);
         return true;
+    }
+    case CW_MESSAGE_OUTPUT_CONFIG: {
+        CwOutputConfig config;
+
+        CHECK(agent, !agent->received_output_config);
+        CHECK(agent, cw_decode_output_config(payload, header->payload_length, &config));
+        CHECK(agent, config.scale_numerator == 1U && config.scale_denominator == 1U);
+        agent->received_output_config = true;
+        return true;
+    }
     case CW_MESSAGE_WINDOW_CREATE:
+        CHECK(agent, agent->received_output_config);
         CHECK(agent, header->payload_length == 24U);
         return true;
     case CW_MESSAGE_WINDOW_FRAME: {
@@ -202,7 +217,9 @@ static int connect_to_server(uint16_t port) {
 
 int main(void) {
     CwDecoder decoder;
-    InputAgent agent = {connect_to_server(44602U), 0U, 0U, false, false, false};
+    InputAgent agent = {
+        .fd = connect_to_server(44602U),
+    };
     uint8_t bytes[4096];
 
     if (agent.fd < 0 || !send_hello(&agent)) {

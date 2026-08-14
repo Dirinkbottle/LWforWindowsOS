@@ -14,16 +14,142 @@
 #include <time.h>
 #include <unistd.h>
 
+enum output_placement {
+	OUTPUT_RIGHT,
+	OUTPUT_LEFT,
+	OUTPUT_ABOVE,
+	OUTPUT_BELOW,
+};
+
 struct agent {
 	int fd;
 	bool hello, created, initial_present, moved_present, released, destroyed;
 	uint32_t frames, presents;
+	uint32_t expected_scale_numerator, expected_scale_denominator;
+	enum output_placement placement;
 };
 
 static void fail(const char *message)
 {
 	fprintf(stderr, "FAIL: stage6-agent: %s\n", message);
 	exit(EXIT_FAILURE);
+}
+
+static bool parse_scale(const char *text, uint32_t *numerator,
+				uint32_t *denominator)
+{
+	char *slash;
+	char *end;
+	unsigned long parsed_numerator;
+	unsigned long parsed_denominator;
+
+	if (text == NULL || numerator == NULL || denominator == NULL ||
+	    (slash = strchr(text, '/')) == NULL || slash == text || slash[1] == '\0')
+		return false;
+	*slash = '\0';
+	parsed_numerator = strtoul(text, &end, 10);
+	if (*end != '\0' || parsed_numerator == 0UL || parsed_numerator > UINT32_MAX) {
+		*slash = '/';
+		return false;
+	}
+	parsed_denominator = strtoul(slash + 1, &end, 10);
+	*slash = '/';
+	if (*end != '\0' || parsed_denominator == 0UL || parsed_denominator > UINT32_MAX)
+		return false;
+	*numerator = (uint32_t)parsed_numerator;
+	*denominator = (uint32_t)parsed_denominator;
+	return true;
+}
+
+static bool parse_placement(const char *text, enum output_placement *placement)
+{
+	if (text == NULL || placement == NULL)
+		return false;
+	if (strcmp(text, "right") == 0)
+		*placement = OUTPUT_RIGHT;
+	else if (strcmp(text, "left") == 0)
+		*placement = OUTPUT_LEFT;
+	else if (strcmp(text, "above") == 0)
+		*placement = OUTPUT_ABOVE;
+	else if (strcmp(text, "below") == 0)
+		*placement = OUTPUT_BELOW;
+	else
+		return false;
+	return true;
+}
+
+static bool send_motion(struct agent *agent, uint64_t wire_sequence,
+			uint64_t presentation_sequence, int32_t client_x,
+			int32_t client_y, int32_t output_x, int32_t output_y);
+
+static bool placement_is_vertical(const struct agent *agent)
+{
+	return agent->placement == OUTPUT_ABOVE || agent->placement == OUTPUT_BELOW;
+}
+
+static bool send_drag_motion(struct agent *agent, uint64_t wire_sequence,
+			     uint64_t presentation_sequence, unsigned step)
+{
+	int32_t output_x = 100;
+	int32_t output_y = 90;
+
+	if (!placement_is_vertical(agent)) {
+		if (agent->placement == OUTPUT_RIGHT) {
+			static const int32_t x[] = {-300, -699, -700, 280};
+			output_x = x[step];
+		} else {
+			static const int32_t x[] = {1620, 2019, 2020, 280};
+			output_x = x[step];
+		}
+	} else if (agent->placement == OUTPUT_ABOVE) {
+		static const int32_t y[] = {790, 1089, 1090, 1270};
+		output_x = 180;
+		output_y = y[step];
+	} else {
+		static const int32_t y[] = {-290, 9, 10, 190};
+		output_x = 180;
+		output_y = y[step];
+	}
+	return send_motion(agent, wire_sequence, presentation_sequence,
+			   100, 10, output_x, output_y);
+}
+
+static bool matches_drag_presentation(const struct agent *agent,
+				      const CwWindowPresent *present, unsigned step)
+{
+	if (agent->placement == OUTPUT_RIGHT) {
+		static const int32_t source_x[] = {400, 799};
+		static const int32_t destination_x[] = {0, 0};
+		static const int32_t width[] = {400, 1};
+		return present->source_x == source_x[step] && present->source_y == 0 &&
+			present->source_w == width[step] && present->source_h == 600 &&
+			present->destination_x == destination_x[step] && present->destination_y == 80 &&
+			present->destination_w == width[step] && present->destination_h == 600;
+	}
+	if (agent->placement == OUTPUT_LEFT) {
+		static const int32_t source_w[] = {400, 1};
+		static const int32_t destination_x[] = {1520, 1919};
+		return present->source_x == 0 && present->source_y == 0 &&
+			present->source_w == source_w[step] && present->source_h == 600 &&
+			present->destination_x == destination_x[step] && present->destination_y == 80 &&
+			present->destination_w == source_w[step] && present->destination_h == 600;
+	}
+	if (agent->placement == OUTPUT_ABOVE) {
+		static const int32_t source_h[] = {300, 1};
+		static const int32_t destination_y[] = {780, 1079};
+		return present->source_x == 0 && present->source_y == 0 &&
+			present->source_w == 800 && present->source_h == source_h[step] &&
+			present->destination_x == 80 && present->destination_y == destination_y[step] &&
+			present->destination_w == 800 && present->destination_h == source_h[step];
+	}
+	{
+		static const int32_t source_y[] = {300, 599};
+		static const int32_t source_h[] = {300, 1};
+		return present->source_x == 0 && present->source_y == source_y[step] &&
+			present->source_w == 800 && present->source_h == source_h[step] &&
+			present->destination_x == 80 && present->destination_y == 0 &&
+			present->destination_w == 800 && present->destination_h == source_h[step];
+	}
 }
 
 static bool send_all(int fd, const uint8_t *bytes, size_t length)
@@ -123,6 +249,15 @@ static bool on_message(void *context, const CwHeader *header,
 		agent->hello = true;
 		return true;
 	}
+	case CW_MESSAGE_OUTPUT_CONFIG: {
+		CwOutputConfig config;
+		if (!agent->hello || !cw_decode_output_config(payload, header->payload_length,
+							       &config) ||
+		    config.scale_numerator != agent->expected_scale_numerator ||
+		    config.scale_denominator != agent->expected_scale_denominator)
+			fail("bad OUTPUT_CONFIG");
+		return true;
+	}
 	case CW_MESSAGE_WINDOW_CREATE: {
 		CwWindowCreate create;
 		if (!agent->hello || !cw_decode_window_create(payload,
@@ -164,33 +299,24 @@ static bool on_message(void *context, const CwHeader *header,
 			 * issue xdg_toplevel.move before the first motion arrives. */
 			if (nanosleep(&delivery_delay, NULL) < 0)
 				fail("nanosleep");
-			if (!send_motion(agent, 4, present.presentation_sequence,
-					 100, 10, -300, 90))
+			if (!send_drag_motion(agent, 4, present.presentation_sequence, 0U))
 				fail("drag motion");
 			agent->presents++;
 			return true;
 		}
 		if (agent->presents == 1) {
-			if (!present.visible || present.source_x != 400 || present.source_y != 0 ||
-			    present.source_w != 400 || present.source_h != 600 ||
-			    present.destination_x != 0 || present.destination_y != 80 ||
-			    present.destination_w != 400 || present.destination_h != 600 ||
+			if (!present.visible || !matches_drag_presentation(agent, &present, 0U) ||
 			    !send_ack(agent, 5, present.presentation_sequence) ||
-			    !send_motion(agent, 6, present.presentation_sequence,
-					 100, 10, -699, 90))
+			    !send_drag_motion(agent, 6, present.presentation_sequence, 1U))
 				fail("50/50 presentation");
 			agent->moved_present = true;
 			agent->presents++;
 			return true;
 		}
 		if (agent->presents == 2) {
-			if (!present.visible || present.source_x != 799 || present.source_y != 0 ||
-			    present.source_w != 1 || present.source_h != 600 ||
-			    present.destination_x != 0 || present.destination_y != 80 ||
-			    present.destination_w != 1 || present.destination_h != 600 ||
+			if (!present.visible || !matches_drag_presentation(agent, &present, 1U) ||
 			    !send_ack(agent, 7, present.presentation_sequence) ||
-			    !send_motion(agent, 8, present.presentation_sequence,
-					 100, 10, -700, 90))
+			    !send_drag_motion(agent, 8, present.presentation_sequence, 2U))
 				fail("one-pixel remote presentation");
 			agent->presents++;
 			return true;
@@ -201,8 +327,7 @@ static bool on_message(void *context, const CwHeader *header,
 			    present.destination_x != 0 || present.destination_y != 0 ||
 			    present.destination_w != 0 || present.destination_h != 0 ||
 			    !send_ack(agent, 9, present.presentation_sequence) ||
-			    !send_motion(agent, 10, present.presentation_sequence,
-					 100, 10, 280, 90))
+			    !send_drag_motion(agent, 10, present.presentation_sequence, 3U))
 				fail("fully-local presentation");
 			agent->presents++;
 			return true;
@@ -210,11 +335,14 @@ static bool on_message(void *context, const CwHeader *header,
 		if (agent->presents == 4) {
 			if (!present.visible || present.source_x != 0 || present.source_y != 0 ||
 			    present.source_w != 800 || present.source_h != 600 ||
-			    present.destination_x != 180 || present.destination_y != 80 ||
+			    present.destination_x != (placement_is_vertical(agent) ? 80 : 180) ||
+			    present.destination_y != (placement_is_vertical(agent) ? 180 : 80) ||
 			    present.destination_w != 800 || present.destination_h != 600 ||
 			    !send_ack(agent, 11, present.presentation_sequence) ||
 			    !send_button(agent, 12, present.presentation_sequence,
-					 CW_BUTTON_RELEASED, 100, 10, 280, 90))
+					 CW_BUTTON_RELEASED, 100, 10,
+					 placement_is_vertical(agent) ? 180 : 280,
+					 placement_is_vertical(agent) ? 190 : 90))
 				fail("fully-remote presentation or release");
 			agent->released = true;
 			agent->presents++;
@@ -243,7 +371,10 @@ static bool on_message(void *context, const CwHeader *header,
 
 int main(int argc, char **argv)
 {
-	struct agent agent = {0};
+	struct agent agent = {
+		.expected_scale_numerator = 1U,
+		.expected_scale_denominator = 1U,
+	};
 	struct sockaddr_in address = { .sin_family = AF_INET };
 	CwDecoder decoder;
 	uint8_t hello[8] = {0};
@@ -251,12 +382,23 @@ int main(int argc, char **argv)
 	char *end;
 	long port = 44606;
 
-	if (argc == 2) {
-		port = strtol(argv[1], &end, 10);
-		if (!*argv[1] || *end || port < 1 || port > 65535)
-			fail("usage: stage6-agent [port]");
-	} else if (argc != 1) {
-		fail("usage: stage6-agent [port]");
+	for (int index = 1; index < argc; ++index) {
+		if (strcmp(argv[index], "--scale") == 0 && index + 1 < argc) {
+			if (!parse_scale(argv[++index], &agent.expected_scale_numerator,
+						 &agent.expected_scale_denominator))
+				fail("usage: stage6-agent [port] [--scale numerator/denominator]");
+			continue;
+		}
+		if (strcmp(argv[index], "--placement") == 0 && index + 1 < argc) {
+			if (!parse_placement(argv[++index], &agent.placement))
+				fail("usage: stage6-agent [port] [--scale numerator/denominator] "
+				     "[--placement right|left|above|below]");
+			continue;
+		}
+		port = strtol(argv[index], &end, 10);
+		if (!*argv[index] || *end || port < 1 || port > 65535)
+			fail("usage: stage6-agent [port] [--scale numerator/denominator] "
+			     "[--placement right|left|above|below]");
 	}
 	address.sin_port = htons((uint16_t)port);
 	if (inet_pton(AF_INET, "127.0.0.1", &address.sin_addr) != 1)
