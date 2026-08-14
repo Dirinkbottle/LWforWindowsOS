@@ -328,6 +328,12 @@ static bool on_message(void *context, const CwHeader *header, const uint8_t *pay
 		agent->presents++;
 		return true;
 	}
+	case CW_MESSAGE_WINDOW_ACTIVATE: {
+		CwWindowActivate activate;
+
+		return agent->created && cw_decode_window_activate(payload,
+			header->payload_length, &activate) && activate.window_id == 1U;
+	}
 	case CW_MESSAGE_WINDOW_DESTROY:
 		if (header->payload_length != 8U || cw_load_u64_le(payload) != 1U ||
 		    agent->frames < 3U || !agent->dropped_damage || !agent->requested_resync ||

@@ -196,6 +196,21 @@ private:
             return find_window(present.window_id) != nullptr &&
                    find_window(present.window_id)->apply_present(present);
         }
+        case CW_MESSAGE_WINDOW_ACTIVATE: {
+            CwWindowActivate activate{};
+            ProxyWindow *window;
+
+            if (!cw_decode_window_activate(payload, header.payload_length, &activate) ||
+                (window = find_window(activate.window_id)) == nullptr ||
+                !window->bring_to_front()) {
+                return false;
+            }
+            if (options_.trace_protocol) {
+                std::printf("[window activate] win=%llu\n",
+                            static_cast<unsigned long long>(activate.window_id));
+            }
+            return true;
+        }
         case CW_MESSAGE_WINDOW_DESTROY: {
             const std::uint64_t window_id = cw_load_u64_le(payload);
             const auto it = windows_.find(window_id);

@@ -290,6 +290,28 @@ static void test_invalid_messages(void) {
     cw_store_u64_le(frame + CW_HEADER_SIZE, 7U);
     cw_store_u64_le(frame + CW_HEADER_SIZE + 16U, 7U);
     expect_decode_error(frame, CW_HEADER_SIZE + 24U, CW_DECODER_INVALID_PAYLOAD);
+
+    memset(frame, 0, sizeof(frame));
+    store_raw_header(frame, CW_PROTOCOL_MAGIC, CW_PROTOCOL_VERSION,
+                     CW_MESSAGE_WINDOW_ACTIVATE, 8U);
+    expect_decode_error(frame, CW_HEADER_SIZE + 8U, CW_DECODER_INVALID_PAYLOAD);
+}
+
+static void test_window_activate_payload(void) {
+    uint8_t payload[8] = {0};
+    CwWindowActivate activate;
+    CwBuffer encoded;
+    CwHeader header;
+
+    cw_store_u64_le(payload, 99U);
+    CHECK(cw_decode_window_activate(payload, sizeof(payload), &activate));
+    CHECK(activate.window_id == 99U);
+    cw_buffer_init(&encoded);
+    CHECK(cw_message_encode(&encoded, CW_MESSAGE_WINDOW_ACTIVATE, 0U, 91U,
+                            payload, sizeof(payload)));
+    CHECK(cw_header_decode(encoded.data, &header));
+    CHECK(header.type == CW_MESSAGE_WINDOW_ACTIVATE && header.payload_length == 8U);
+    cw_buffer_destroy(&encoded);
 }
 
 static void test_damage_payloads(void) {
@@ -397,6 +419,7 @@ int main(void) {
     test_tcp_fragmentation();
     test_coalescing_and_mixed_stream();
     test_invalid_messages();
+    test_window_activate_payload();
     test_damage_payloads();
     test_pointer_payloads();
     printf("protocol tests: PASS\n");

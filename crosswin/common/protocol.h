@@ -2,7 +2,7 @@
 #define CROSSWIN_PROTOCOL_H
 
 /*
- * CrossWin Network Protocol (CWNP), version 3.
+ * CrossWin Network Protocol (CWNP), version 4.
  *
  * Every integer is serialized explicitly in little-endian byte order.  No
  * native C/C++ struct is ever used as a wire message.  TCP is a byte stream:
@@ -19,7 +19,7 @@ extern "C" {
 
 enum {
     CW_PROTOCOL_MAGIC = 0x504E5743U, /* Wire bytes: 'C', 'W', 'N', 'P'. */
-    CW_PROTOCOL_VERSION = 3U,
+    CW_PROTOCOL_VERSION = 4U,
     CW_HEADER_SIZE = 24U,
     CW_MAX_PAYLOAD = 64U * 1024U * 1024U,
     CW_PIXEL_FORMAT_BGRA8888 = 1U,
@@ -40,6 +40,8 @@ typedef enum {
     CW_MESSAGE_WINDOW_DAMAGE = 15,
     CW_MESSAGE_WINDOW_FRAME_REQUEST = 16,
     CW_MESSAGE_WINDOW_RESIZE = 17,
+    /* Linux canonical desktop-shell activation/stacking notification. */
+    CW_MESSAGE_WINDOW_ACTIVATE = 18,
     CW_MESSAGE_POINTER_ENTER = 30,
     CW_MESSAGE_POINTER_LEAVE = 31,
     CW_MESSAGE_POINTER_MOTION = 32,
@@ -153,6 +155,12 @@ typedef struct {
     uint64_t window_id;
     uint64_t presentation_sequence;
 } CwWindowPresentAck;
+
+/* Sent by Linux after desktop-shell has made this logical window active.
+ * The Windows side only brings its matching presentation HWND forward. */
+typedef struct {
+    uint64_t window_id;
+} CwWindowActivate;
 
 typedef struct {
     uint64_t window_id;
@@ -274,6 +282,8 @@ bool cw_decode_window_resize(const uint8_t *payload, uint32_t length,
 bool cw_decode_window_present(const uint8_t *payload, uint32_t length, CwWindowPresent *out);
 bool cw_decode_window_present_ack(
     const uint8_t *payload, uint32_t length, CwWindowPresentAck *out);
+bool cw_decode_window_activate(const uint8_t *payload, uint32_t length,
+                               CwWindowActivate *out);
 bool cw_decode_pointer_location(const uint8_t *payload, uint32_t length, CwPointerLocation *out);
 bool cw_decode_pointer_motion(const uint8_t *payload, uint32_t length, CwPointerMotion *out);
 bool cw_decode_pointer_button(

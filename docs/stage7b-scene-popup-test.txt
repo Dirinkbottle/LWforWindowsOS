@@ -1,9 +1,10 @@
 Stage 7B：Wayland 场景子树、Alpha 与 xdg_popup 验证
 ========================================================
 
-本文件对应 CWNP v3。与 v2 的区别是 WINDOW_CREATE 从 16 字节扩展为 24
-字节，末尾新增 parent_window_id：0 是普通 toplevel，非 0 是其 xdg_popup
-父窗口 ID。不要把 v3 Agent 与旧 v2 Weston/测试端混用。
+Stage 7B 完成时引入 CWNP v3：WINDOW_CREATE 从 16 字节扩展为 24 字节，末尾
+新增 parent_window_id：0 是普通 toplevel，非 0 是其 xdg_popup 父窗口 ID。当前
+代码已在 Stage 7C 升级到 CWNP v4，因此运行本文件的所有命令时必须使用同一份
+最新 Weston、测试端与 Windows Agent，不能混用旧 v2/v3 二进制。
 
 本阶段的所有窗口位置、可见裁剪和 source rect 仍由 Linux Weston 决定；Windows
 只创建 presentation HWND 并应用 WINDOW_PRESENT。xdg_popup 会在 Windows 建为
@@ -111,6 +112,10 @@ popup surface [94,30]。
    把 IP 改为 Linux 在 Windows VM 可达的地址。
 
 5. Linux 中运行 30 秒，留出观察和点击时间：
+
+   若刚同步源码或刚拉取本次修复，先重建这个 Linux 测试 client：
+
+    ninja -C "$CWROOT/weston/build-stage4" crosswin/crosswin-stage7b-popup-client
 
     WAYLAND_DISPLAY=crosswin-7b-win \
       "$CWROOT/weston/build-stage4/crosswin/crosswin-stage7b-popup-client" \

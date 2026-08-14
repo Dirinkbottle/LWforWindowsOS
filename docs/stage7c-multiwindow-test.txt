@@ -1,0 +1,138 @@
+Stage 7C：多窗口、生命周期、激活与相对 z-order 验证
+====================================================
+
+本阶段将 CWNP 升级到 v4。新增 Linux → Windows 的 8 字节
+`WINDOW_ACTIVATE { window_id }`：它只表示 Weston desktop-shell 已完成
+canonical 激活/层级更新；Windows Agent 仅将同 ID 的 presentation HWND 放到
+Crosswin 窗口组前方，不保存或推断任何 Linux 几何状态。
+
+每个 `xdg_toplevel` 都有独立、单调递增且不会在进程生命周期内复用的
+window_id 与 HWND。`xdg_popup` 仍维持 Stage 7B 的 owned HWND 关系。
+wl_surface 的 NULL-buffer unmap 会发送 `WINDOW_PRESENT visible=0`，而不是
+销毁 HWND；下一次 map 使用同一 ID、强制完整 WINDOW_FRAME 后重新显示。
+
+一、Linux 自动验证
+------------------
+
+先构建：
+
+    make -C crosswin all test integration input-integration
+    ninja -C weston/build-stage4 \
+      crosswin/crosswin-stage4.so desktop-shell/desktop-shell.so \
+      crosswin/crosswin-stage7c-client
+
+以下命令要求宿主 Wayland socket 是 `wayland-0`；若实际名称不同，请替换。
+
+    export WAYLAND_DISPLAY=wayland-0
+    export CWROOT=/home/inkbottle/othersrc/LWforWindowsOS
+    export WESTON_MODULE_MAP="crosswin-stage4.so=$CWROOT/weston/build-stage4/crosswin/crosswin-stage4.so;wayland-backend.so=$CWROOT/weston/build-stage4/libweston/backend-wayland/wayland-backend.so;desktop-shell.so=$CWROOT/weston/build-stage4/desktop-shell/desktop-shell.so;weston-desktop-shell=$CWROOT/weston/build-stage4/clients/weston-desktop-shell;weston-keyboard=$CWROOT/weston/build-stage4/clients/weston-keyboard"
+
+### C1：三窗口、激活、hide/show、销毁
+
+终端 A：
+
+    WESTON_MODULE_MAP="$WESTON_MODULE_MAP" "$CWROOT/weston/build-stage4/frontend/weston" \
+      --socket=crosswin-7c-auto --backend=wayland-backend.so \
+      --modules=crosswin-stage4.so --use-pixman --no-config \
+      --crosswin-x=1024 --crosswin-export --crosswin-port=44612 \
+      --crosswin-trace-protocol --crosswin-trace-present --crosswin-trace-input
+
+终端 B：
+
+    "$CWROOT/crosswin/build/stage7c-agent" 44612
+
+终端 C：
+
+    WAYLAND_DISPLAY=crosswin-7c-auto \
+      "$CWROOT/weston/build-stage4/crosswin/crosswin-stage7c-client"
+
+成功标志：
+
+    stage7c multi-window lifecycle integration: PASS
+
+该测试断言：ID 1、2、3 各创建一个独立 toplevel；它们的 remote-local
+destination 分别为 `[80,80]`、`[128,80]`、`[176,80]`；对窗口 2 的代理点击
+会得到 `WINDOW_ACTIVATE win=2`；窗口 1 完成 hide → show 后仍在 `[80,80]`
+并使用原 ID，随后先销毁，窗口 2/3 最后销毁。
+
+### C2：100 次生命周期压力
+
+停止 C1 的 Weston 后，终端 A 改用端口/socket：
+
+    WESTON_MODULE_MAP="$WESTON_MODULE_MAP" "$CWROOT/weston/build-stage4/frontend/weston" \
+      --socket=crosswin-7c-stress --backend=wayland-backend.so \
+      --modules=crosswin-stage4.so --use-pixman --no-config \
+      --crosswin-x=1024 --crosswin-export --crosswin-port=44613
+
+终端 B：
+
+    "$CWROOT/crosswin/build/stage7c-stress-agent" 44613
+
+终端 C：
+
+    WAYLAND_DISPLAY=crosswin-7c-stress \
+      "$CWROOT/weston/build-stage4/crosswin/crosswin-stage7c-client" --stress
+
+成功标志：
+
+    stage7c 100-window lifecycle stress: PASS
+
+它会真实 map、完整导出、ACK、destroy 100 个 wl_shm xdg_toplevel，并要求
+window_id 严格为 1..100；任何 stale HWND/对象、ID 重用或消息顺序混乱都会失败。
+
+### C3：传输断线后重连
+
+停止 C2 的 Weston 后，使用端口/socket `44614` / `crosswin-7c-reconnect` 启动
+同样的 Weston；终端 B/C 分别执行：
+
+    "$CWROOT/crosswin/build/stage7c-reconnect-agent" 44614
+
+    WAYLAND_DISPLAY=crosswin-7c-reconnect \
+      "$CWROOT/weston/build-stage4/crosswin/crosswin-stage7c-client" \
+      --hold-ms 3000
+
+成功标志：
+
+    stage7c reconnect/resync integration: PASS
+
+该 agent 在三个窗口均导出完成后主动断开 TCP，再重新连接并重新 HELLO。第二轮必须
+重新收到同样的 ID 1、2、3 的 CREATE、完整 FRAME 和 PRESENT；Weston 与 client
+在两次断线期间不能崩溃。
+
+二、Windows 必测（Stage 7C Gate）
+---------------------------------
+
+1. 同步整个最新 `crosswin/` 到 Windows，并双击
+   `crosswin\build-windows-agent.cmd`。必须是 CWNP v4；旧 v3 exe 会在 HELLO
+   阶段被拒绝。
+2. 启动上面 C1 的 Weston，但将 socket 改为 `crosswin-7c-win`、端口改为
+   `44600`。
+3. Windows CMD 启动：
+
+    build\crosswin-agent.exe --host 192.168.122.1 --port 44600 ^
+      --trace-protocol --trace-present --trace-input --trace-frame
+
+4. Linux 运行 30 秒观察版 client：
+
+    WAYLAND_DISPLAY=crosswin-7c-win \
+      "$CWROOT/weston/build-stage4/crosswin/crosswin-stage7c-client" \
+      --hold-ms 30000
+
+预期先看到三个相互错开的独立 HWND：蓝色 A、绿色 B、红色 C。它们不是全屏
+overlay，也不是三个画在同一个 HWND 内的区域。
+
+5. 在 Windows 打开 Notepad，将它覆盖在任一个 Crosswin 窗口上；应可正常与
+   Windows 原生应用共存。随后把 Notepad 置前，再点击绿色 B：
+
+   * Agent 出现 `[window activate] win=2`；
+   * B 位于 A/C 之上，且 Windows 的这次点击会使 B 回到前方；
+   * 再点击红色 C，应出现 `win=3`，C 位于 A/B 之上；
+   * 重新点击 Notepad，它仍可自然覆盖 Crosswin 窗口。
+
+6. 30 秒观察期之后，A 会隐藏约 2 秒、以同一位置显示约 2 秒，接着先消失；B/C
+   仍保留约 2 秒后才消失。Agent 不应崩溃、断线或留下空白 stale HWND。
+
+Stage 7B 的 popup owned-HWND/parent 关系已经在其自动与 Windows Gate 中通过；
+Stage 7C 不改变该关系。只有 C1、C2 和上述 Windows 目视验证均通过，才可标记：
+
+    STAGE 7C PASS

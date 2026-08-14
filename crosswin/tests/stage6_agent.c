@@ -222,6 +222,13 @@ static bool on_message(void *context, const CwHeader *header,
 		}
 		fail("unexpected extra WINDOW_PRESENT");
 		return false;
+	case CW_MESSAGE_WINDOW_ACTIVATE: {
+		CwWindowActivate activate;
+		if (!agent->created || !cw_decode_window_activate(payload,
+			header->payload_length, &activate) || activate.window_id != 1U)
+			fail("bad WINDOW_ACTIVATE");
+		return true;
+	}
 	case CW_MESSAGE_WINDOW_DESTROY:
 		if (!agent->moved_present || !agent->released || agent->presents != 5 ||
 		    agent->frames != 1 ||

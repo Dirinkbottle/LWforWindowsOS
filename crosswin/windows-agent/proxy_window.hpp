@@ -23,6 +23,7 @@ public:
     void destroy();
     HWND hwnd() const;
     bool owns_window(std::uint64_t window_id) const;
+    bool bring_to_front();
 
     bool apply_create(const CwWindowCreate &create);
     bool apply_resize(const CwWindowResize &resize);

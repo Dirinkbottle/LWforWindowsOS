@@ -186,6 +186,12 @@ static bool on_message(void *context, const CwHeader *header, const uint8_t *pay
 		}
 		return true;
 	}
+	case CW_MESSAGE_WINDOW_ACTIVATE: {
+		CwWindowActivate activate;
+
+		return cw_decode_window_activate(payload, header->payload_length, &activate) &&
+		       find_window(agent, activate.window_id) != NULL;
+	}
 	case CW_MESSAGE_WINDOW_DESTROY: {
 		struct window_state *window;
 

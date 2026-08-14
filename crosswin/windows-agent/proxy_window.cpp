@@ -90,6 +90,20 @@ bool ProxyWindow::owns_window(std::uint64_t window_id) const {
     return window_id_ != 0U && window_id_ == window_id;
 }
 
+bool ProxyWindow::bring_to_front() {
+    if (hwnd_ == nullptr) {
+        return false;
+    }
+    if (!IsWindowVisible(hwnd_)) {
+        return true; /* A hidden logical window has no native stack position. */
+    }
+    /* This is deliberately HWND_TOP rather than TOPMOST/SetForegroundWindow:
+     * Linux owns ordering among Crosswin windows, while ordinary Windows apps
+     * may still naturally cover the whole Crosswin group. */
+    return SetWindowPos(hwnd_, HWND_TOP, 0, 0, 0, 0,
+                        SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE) != FALSE;
+}
+
 bool ProxyWindow::apply_create(const CwWindowCreate &create) {
     if (hwnd_ == nullptr || window_id_ != 0U || create.window_id == 0U ||
         create.surface_width == 0U || create.surface_height == 0U) {

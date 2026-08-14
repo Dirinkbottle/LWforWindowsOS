@@ -1,21 +1,22 @@
-# CrossWin Stage 2–7B prototype
+# CrossWin Stage 2–7C prototype
 
 This directory adds the constrained TCP prototype on top of the Stage 1
 Geometry Oracle in `../geometry`. It currently provides a single remote
 output, TCP, real Weston `xdg_toplevel + xdg_popup + wl_shm` export,
 Linux-owned drag geometry, scene-subtree composition (subsurface/alpha),
-per-pixel-alpha Windows proxy HWNDs, and persistent BGRA8888 framebuffers
-with incremental damage. GPU/dmabuf, multi-window focus policy, DPI and a
-high-performance transport remain later stages.
+per-pixel-alpha Windows proxy HWNDs, persistent BGRA8888 framebuffers with
+incremental damage, and independent multi-window lifecycle/activation
+ordering. GPU/dmabuf, DPI and a high-performance transport remain later
+stages.
 
 ## Wire contract
 
-CWNP v3 has a fixed 24-byte header, explicitly serialized in little endian:
+CWNP v4 has a fixed 24-byte header, explicitly serialized in little endian:
 
 | Byte offset | Size | Field |
 | --- | ---: | --- |
 | 0 | 4 | magic (`CWNP`) |
-| 4 | 2 | protocol version (3) |
+| 4 | 2 | protocol version (4) |
 | 6 | 2 | message type |
 | 8 | 4 | flags |
 | 12 | 4 | payload length |
@@ -40,6 +41,13 @@ parent_window_id }`. `parent_window_id=0` creates a toplevel proxy; a non-zero
 value creates an `xdg_popup` proxy owned by that HWND. The Windows side keeps
 no canonical geometry: it only applies the Linux-sent `WINDOW_PRESENT` crop
 and position.
+
+`WINDOW_ACTIVATE { window_id }` is emitted only after desktop-shell completes
+the canonical Linux focus/layer update. Windows uses it to put that individual
+proxy HWND in front of other Crosswin HWNDs, without making the whole group
+topmost or controlling arbitrary native Windows applications. A NULL-buffer
+unmap is represented as an invisible `WINDOW_PRESENT`; remap retains the
+logical ID and forces a fresh full frame.
 
 `WINDOW_PRESENT` is atomic: it contains surface-local source rect,
 remote-output-local destination rect, visibility, and a presentation sequence.
@@ -66,7 +74,8 @@ dropped rather than reinterpreted using the newest presentation.
   round-trip TCP, Stage 7A damage/resync/CRC, and Stage 7B scene/popup tests.
 
 详细的 Stage 7A 验证见 `../docs/stage7a-damage-test.txt`；Stage 7B 的 Linux
-自动验证和 Windows 必测步骤见 `../docs/stage7b-scene-popup-test.txt`。
+自动验证和 Windows 必测步骤见 `../docs/stage7b-scene-popup-test.txt`；Stage
+7C 的多窗口/生命周期验证见 `../docs/stage7c-multiwindow-test.txt`。
 
 ## Linux checks
 
