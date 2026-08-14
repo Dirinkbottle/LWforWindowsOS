@@ -25,6 +25,7 @@ std::uint64_t timestamp_ms() {
 ProxyWindow::ProxyWindow()
     : hwnd_(nullptr),
       protocol_(nullptr),
+      is_popup_(false),
       window_id_(0U),
       surface_width_(0U),
       surface_height_(0U),
@@ -42,8 +43,8 @@ ProxyWindow::~ProxyWindow() {
     destroy();
 }
 
-bool ProxyWindow::create(HINSTANCE instance, AgentProtocol *protocol, bool trace_input,
-                         bool trace_frame, bool trace_damage) {
+bool ProxyWindow::create(HINSTANCE instance, AgentProtocol *protocol, HWND owner, bool is_popup,
+                         bool trace_input, bool trace_frame, bool trace_damage) {
     WNDCLASSW window_class{};
 
     if (protocol == nullptr || hwnd_ != nullptr) {
@@ -57,11 +58,14 @@ bool ProxyWindow::create(HINSTANCE instance, AgentProtocol *protocol, bool trace
         return false;
     }
     protocol_ = protocol;
+    is_popup_ = is_popup;
     trace_input_ = trace_input;
     trace_frame_ = trace_frame;
     trace_damage_ = trace_damage;
-    hwnd_ = CreateWindowExW(WS_EX_TOOLWINDOW, kProxyClassName, L"",
-                            WS_POPUP, 0, 0, 1, 1, nullptr, nullptr, instance, this);
+    hwnd_ = CreateWindowExW(WS_EX_TOOLWINDOW | WS_EX_LAYERED |
+                                (is_popup_ ? WS_EX_NOACTIVATE : 0U),
+                            kProxyClassName, L"", WS_POPUP, 0, 0, 1, 1,
+                            owner, nullptr, instance, this);
     return hwnd_ != nullptr;
 }
 
@@ -75,6 +79,7 @@ void ProxyWindow::destroy() {
     frame_sequence_ = 0U;
     pressed_button_mask_ = 0U;
     tracking_mouse_ = false;
+    is_popup_ = false;
 }
 
 HWND ProxyWindow::hwnd() const {
@@ -161,7 +166,9 @@ bool ProxyWindow::apply_frame(const CwWindowFrame &frame) {
                     static_cast<unsigned long long>(frame_sequence_),
                     static_cast<unsigned long long>(frame.pixel_bytes));
     }
-    InvalidateRect(hwnd_, nullptr, FALSE);
+    if (presentation_.visible && !update_layered_window()) {
+        return false;
+    }
     return true;
 }
 
@@ -224,8 +231,8 @@ bool ProxyWindow::apply_damage(const CwWindowDamage &damage) {
                     static_cast<unsigned long long>(damage.base_frame_sequence),
                     damage.rect_count);
     }
-    if (!rectangles.empty()) {
-        InvalidateRect(hwnd_, nullptr, FALSE);
+    if (!rectangles.empty() && presentation_.visible && !update_layered_window()) {
+        return false;
     }
     return true;
 }
@@ -243,11 +250,75 @@ bool ProxyWindow::apply_present(const CwWindowPresent &present) {
         ShowWindow(hwnd_, SW_HIDE);
         return protocol_->send_present_ack(present.window_id, present.presentation_sequence);
     }
-    SetWindowPos(hwnd_, HWND_TOP, present.destination_x, present.destination_y,
-                 present.destination_w, present.destination_h,
-                 SWP_NOACTIVATE | SWP_SHOWWINDOW);
-    InvalidateRect(hwnd_, nullptr, FALSE);
+    if (!update_layered_window()) {
+        return false;
+    }
     return protocol_->send_present_ack(present.window_id, present.presentation_sequence);
+}
+
+bool ProxyWindow::update_layered_window() {
+    BITMAPINFO info{};
+    BLENDFUNCTION blend{AC_SRC_OVER, 0U, 255U, AC_SRC_ALPHA};
+    POINT destination{presentation_.destination_x, presentation_.destination_y};
+    POINT source{0, 0};
+    SIZE size{presentation_.destination_w, presentation_.destination_h};
+    HDC screen = nullptr;
+    HDC memory = nullptr;
+    HBITMAP bitmap = nullptr;
+    HGDIOBJ old_bitmap = nullptr;
+    void *bits = nullptr;
+    bool ok = false;
+
+    if (hwnd_ == nullptr || framebuffer_.empty() || !presentation_.visible ||
+        presentation_.destination_w <= 0 || presentation_.destination_h <= 0 ||
+        presentation_.source_w != presentation_.destination_w ||
+        presentation_.source_h != presentation_.destination_h) {
+        return false;
+    }
+    info.bmiHeader.biSize = sizeof(info.bmiHeader);
+    info.bmiHeader.biWidth = presentation_.destination_w;
+    info.bmiHeader.biHeight = -presentation_.destination_h;
+    info.bmiHeader.biPlanes = 1;
+    info.bmiHeader.biBitCount = 32;
+    info.bmiHeader.biCompression = BI_RGB;
+    screen = GetDC(nullptr);
+    if (screen == nullptr) {
+        goto out;
+    }
+    memory = CreateCompatibleDC(screen);
+    if (memory == nullptr) {
+        goto out;
+    }
+    bitmap = CreateDIBSection(memory, &info, DIB_RGB_COLORS, &bits, nullptr, 0U);
+    if (bitmap == nullptr || bits == nullptr) {
+        goto out;
+    }
+    for (int row = 0; row < presentation_.source_h; ++row) {
+        const std::size_t from =
+            static_cast<std::size_t>(presentation_.source_y + row) * stride_ +
+            static_cast<std::size_t>(presentation_.source_x) * 4U;
+        const std::size_t to = static_cast<std::size_t>(row) *
+                               static_cast<std::size_t>(presentation_.source_w) * 4U;
+        std::memcpy(static_cast<std::uint8_t *>(bits) + to, framebuffer_.data() + from,
+                    static_cast<std::size_t>(presentation_.source_w) * 4U);
+    }
+    old_bitmap = SelectObject(memory, bitmap);
+    ok = UpdateLayeredWindow(hwnd_, screen, &destination, &size, memory, &source,
+                             0U, &blend, ULW_ALPHA) != FALSE;
+out:
+    if (old_bitmap != nullptr && memory != nullptr) {
+        SelectObject(memory, old_bitmap);
+    }
+    if (bitmap != nullptr) {
+        DeleteObject(bitmap);
+    }
+    if (memory != nullptr) {
+        DeleteDC(memory);
+    }
+    if (screen != nullptr) {
+        ReleaseDC(nullptr, screen);
+    }
+    return ok;
 }
 
 bool ProxyWindow::apply_destroy(std::uint64_t window_id) {

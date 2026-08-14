@@ -1,0 +1,137 @@
+Stage 7B：Wayland 场景子树、Alpha 与 xdg_popup 验证
+========================================================
+
+本文件对应 CWNP v3。与 v2 的区别是 WINDOW_CREATE 从 16 字节扩展为 24
+字节，末尾新增 parent_window_id：0 是普通 toplevel，非 0 是其 xdg_popup
+父窗口 ID。不要把 v3 Agent 与旧 v2 Weston/测试端混用。
+
+本阶段的所有窗口位置、可见裁剪和 source rect 仍由 Linux Weston 决定；Windows
+只创建 presentation HWND 并应用 WINDOW_PRESENT。xdg_popup 会在 Windows 建为
+独立、无激活的 owned layered HWND，因此可以自然处于父窗口之上并支持透明像素。
+
+一、Linux 自动验证（已可本机执行）
+----------------------------------
+
+在仓库根目录执行：
+
+    make -C crosswin all test integration input-integration
+    ninja -C weston/build-stage4 \
+      crosswin/crosswin-stage4.so \
+      crosswin/crosswin-stage7b-client \
+      crosswin/crosswin-stage7b-popup-client
+
+下面两项会启动嵌套 Weston 与本地协议 Agent。它们要求宿主 Wayland socket
+存在；若实际名称不是 wayland-0，请替换第一行。
+
+    export WAYLAND_DISPLAY=wayland-0
+    export CWROOT=/home/inkbottle/othersrc/LWforWindowsOS
+    export WESTON_MODULE_MAP="crosswin-stage4.so=$CWROOT/weston/build-stage4/crosswin/crosswin-stage4.so;wayland-backend.so=$CWROOT/weston/build-stage4/libweston/backend-wayland/wayland-backend.so;desktop-shell.so=$CWROOT/weston/build-stage4/desktop-shell/desktop-shell.so;weston-desktop-shell=$CWROOT/weston/build-stage4/clients/weston-desktop-shell;weston-keyboard=$CWROOT/weston/build-stage4/clients/weston-keyboard"
+
+场景子树自动测试：root、负坐标 alpha subsurface、右侧越界 opaque
+subsurface、child-only damage、place_above 和 place_below 都必须通过。
+
+    # 终端 A
+    WESTON_MODULE_MAP="$WESTON_MODULE_MAP" "$CWROOT/weston/build-stage4/frontend/weston" \
+      --socket=crosswin-7b-scene --backend=wayland-backend.so \
+      --modules=crosswin-stage4.so --use-pixman --no-config \
+      --crosswin-x=1024 --crosswin-export --crosswin-port=44610 \
+      --crosswin-trace-protocol --crosswin-trace-damage
+
+    # 终端 B
+    "$CWROOT/crosswin/build/stage7b-agent" 44610
+
+    # 终端 C
+    WAYLAND_DISPLAY=crosswin-7b-scene \
+      "$CWROOT/weston/build-stage4/crosswin/crosswin-stage7b-client"
+
+终端 B 的成功标志：
+
+    stage7b subsurface/alpha integration: PASS
+
+Weston 日志必须至少出现两次 WINDOW_DAMAGE。第一次 alpha 子面从半透明红色
+更新为半透明绿色；第二次 place_below 后被 root 棋盘格重新遮住。
+
+Popup 自动测试同时验证：CSD/window geometry 外沿仍在 framebuffer 内、两个
+嵌套 popup 的 parent ID 为 1→2→3、alpha 像素、跨 Linux/Windows 输出裁剪、
+Windows proxy 坐标到 popup surface [94,30] 的点击与按键，以及退出时三者销毁。
+
+    # 终端 A（先停止上一个 Weston）
+    WESTON_MODULE_MAP="$WESTON_MODULE_MAP" "$CWROOT/weston/build-stage4/frontend/weston" \
+      --socket=crosswin-7b-popup --backend=wayland-backend.so \
+      --modules=crosswin-stage4.so --use-pixman --no-config \
+      --crosswin-x=1024 --crosswin-export --crosswin-port=44611 \
+      --crosswin-initial-x=1050 --crosswin-initial-y=80 \
+      --crosswin-trace-protocol --crosswin-trace-present --crosswin-trace-input
+
+    # 终端 B
+    "$CWROOT/crosswin/build/stage7b-popup-agent" 44611
+
+    # 终端 C
+    WAYLAND_DISPLAY=crosswin-7b-popup \
+      "$CWROOT/weston/build-stage4/crosswin/crosswin-stage7b-popup-client" \
+      --expect-popup-input
+
+终端 B 的成功标志：
+
+    stage7b popup hierarchy integration: PASS
+
+关键 Weston 日志应类似：
+
+    present win=2 ... global=[950,120 240x120] src=[74,0 166x120] dst=[0,120 166x120]
+    input source=windows-proxy ... win=2 ... surface=[94,30] delivered
+
+这说明 popup 的左 74 像素在 Linux 输出，右 166 像素在 Windows 输出；点击
+Windows 本地 [20,30] 没有被当成 [20,30] 的错误 surface 坐标，而是正确映射为
+popup surface [94,30]。
+
+二、Windows 必测（Stage 7B Gate）
+-------------------------------
+
+1. 将更新后的整个 crosswin/ 目录同步到 Windows；Weston 不需要复制到 Windows。
+2. 双击 crosswin\build-windows-agent.cmd，确认 BUILD SUCCESS。该脚本使用
+   MSVC C11/C++17、/W4、/WX；不要继续使用旧的 v2 exe。
+3. 在 Linux 启动下列 Weston。它让 parent 完全位于 Windows 区域，而 popup 横跨
+   边界，便于观察 Windows 侧的 crop。
+
+    export WAYLAND_DISPLAY=wayland-0
+    export CWROOT=/home/inkbottle/othersrc/LWforWindowsOS
+    export WESTON_MODULE_MAP="crosswin-stage4.so=$CWROOT/weston/build-stage4/crosswin/crosswin-stage4.so;wayland-backend.so=$CWROOT/weston/build-stage4/libweston/backend-wayland/wayland-backend.so;desktop-shell.so=$CWROOT/weston/build-stage4/desktop-shell/desktop-shell.so;weston-desktop-shell=$CWROOT/weston/build-stage4/clients/weston-desktop-shell;weston-keyboard=$CWROOT/weston/build-stage4/clients/weston-keyboard"
+    WESTON_MODULE_MAP="$WESTON_MODULE_MAP" "$CWROOT/weston/build-stage4/frontend/weston" \
+      --socket=crosswin-7b-win --backend=wayland-backend.so \
+      --modules=crosswin-stage4.so --use-pixman --no-config \
+      --crosswin-x=1024 --crosswin-export --crosswin-port=44600 \
+      --crosswin-initial-x=1050 --crosswin-initial-y=80 \
+      --crosswin-trace-protocol --crosswin-trace-present --crosswin-trace-input
+
+4. Windows CMD 中启动：
+
+    build\crosswin-agent.exe --host 192.168.122.1 --port 44600 ^
+      --trace-protocol --trace-present --trace-input --trace-frame --trace-damage
+
+   把 IP 改为 Linux 在 Windows VM 可达的地址。
+
+5. Linux 中运行 30 秒，留出观察和点击时间：
+
+    WAYLAND_DISPLAY=crosswin-7b-win \
+      "$CWROOT/weston/build-stage4/crosswin/crosswin-stage7b-popup-client" \
+      --run-ms 30000
+
+预期 Windows Agent 输出依次包含：
+
+    [window create] win=1 parent=0 popup=0
+    [window create] win=2 parent=1 popup=1
+    [window create] win=3 parent=2 popup=1
+
+目视检查：
+
+* 灰色 40x30 外沿与蓝色 parent 内容都完整，没有因为 xdg window geometry 被裁掉；
+* 半透明红 popup 只显示其 Windows 侧的右半部分，左边界紧贴 Windows x=0；
+* 半透明绿色 nested popup 在红 popup 之上；边角应保持透明/半透明，不能变成黑色
+  矩形；
+* 单击红色 popup 可见区域。Windows 输出应有 POINTER_ENTER/POINTER_BUTTON，Linux
+  日志应出现 `win=2`、`surface=[...] delivered`；
+* 30 秒后 client 退出，三个 popup/parent HWND 都立即消失，Windows Agent 不应崩溃。
+
+只有上述 Linux 自动测试和 Windows 目视/点击测试都通过，才可标记：
+
+    STAGE 7B PASS

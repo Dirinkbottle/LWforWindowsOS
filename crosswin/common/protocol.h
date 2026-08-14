@@ -2,7 +2,7 @@
 #define CROSSWIN_PROTOCOL_H
 
 /*
- * CrossWin Network Protocol (CWNP), version 2.
+ * CrossWin Network Protocol (CWNP), version 3.
  *
  * Every integer is serialized explicitly in little-endian byte order.  No
  * native C/C++ struct is ever used as a wire message.  TCP is a byte stream:
@@ -19,7 +19,7 @@ extern "C" {
 
 enum {
     CW_PROTOCOL_MAGIC = 0x504E5743U, /* Wire bytes: 'C', 'W', 'N', 'P'. */
-    CW_PROTOCOL_VERSION = 2U,
+    CW_PROTOCOL_VERSION = 3U,
     CW_HEADER_SIZE = 24U,
     CW_MAX_PAYLOAD = 64U * 1024U * 1024U,
     CW_PIXEL_FORMAT_BGRA8888 = 1U,
@@ -83,6 +83,9 @@ typedef struct {
     uint64_t window_id;
     uint32_t surface_width;
     uint32_t surface_height;
+    /* 0 means a top-level proxy.  A non-zero parent identifies an xdg_popup
+     * owner and requires the receiver to make a non-activating owned window. */
+    uint64_t parent_window_id;
 } CwWindowCreate;
 
 typedef struct {

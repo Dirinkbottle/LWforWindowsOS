@@ -125,7 +125,7 @@ static bool on_message(void *context, const CwHeader *header, const uint8_t *pay
         CHECK(agent, header->payload_length == 8U);
         return true;
     case CW_MESSAGE_WINDOW_CREATE:
-        CHECK(agent, header->payload_length == 16U);
+        CHECK(agent, header->payload_length == 24U);
         return true;
     case CW_MESSAGE_WINDOW_FRAME: {
         CwWindowFrame frame;

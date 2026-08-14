@@ -8,7 +8,8 @@
 #include <cstdint>
 #include <vector>
 
-/* A single, WS_POPUP proxy HWND whose geometry is always Linux-provided. */
+/* One Linux-owned proxy HWND. Popups use their parent HWND as a non-activating
+ * Win32 owner; every proxy is presented through per-pixel alpha. */
 class ProxyWindow {
 public:
     ProxyWindow();
@@ -17,8 +18,8 @@ public:
     ProxyWindow(const ProxyWindow &) = delete;
     ProxyWindow &operator=(const ProxyWindow &) = delete;
 
-    bool create(HINSTANCE instance, AgentProtocol *protocol, bool trace_input,
-                bool trace_frame, bool trace_damage);
+    bool create(HINSTANCE instance, AgentProtocol *protocol, HWND owner, bool is_popup,
+                bool trace_input, bool trace_frame, bool trace_damage);
     void destroy();
     HWND hwnd() const;
     bool owns_window(std::uint64_t window_id) const;
@@ -40,10 +41,12 @@ private:
     void send_button(UINT message, WPARAM wparam, LPARAM lparam);
     void send_wheel(WPARAM wparam, LPARAM lparam);
     bool request_frame_resync(const char *reason);
+    bool update_layered_window();
     void paint(HDC dc);
 
     HWND hwnd_;
     AgentProtocol *protocol_;
+    bool is_popup_;
     std::uint64_t window_id_;
     std::uint32_t surface_width_;
     std::uint32_t surface_height_;

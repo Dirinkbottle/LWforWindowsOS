@@ -151,7 +151,7 @@ static bool send_hello_ack(Server *server) {
 }
 
 static bool send_create(Server *server) {
-    uint8_t payload[16];
+    uint8_t payload[24] = {0};
 
     cw_store_u64_le(payload, server->session.window_id);
     cw_store_u32_le(payload + 8U, FAKE_SURFACE_WIDTH);

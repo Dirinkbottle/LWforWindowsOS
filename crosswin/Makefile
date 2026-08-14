@@ -8,7 +8,7 @@ BINDIR = build
 
 .PHONY: all test integration input-integration sanitize clean
 
-all: $(BINDIR)/fake-server $(BINDIR)/protocol_test $(BINDIR)/session_test $(BINDIR)/scripted-agent $(BINDIR)/input-agent $(BINDIR)/stage5-agent $(BINDIR)/stage6-agent $(BINDIR)/stage7a-agent
+all: $(BINDIR)/fake-server $(BINDIR)/protocol_test $(BINDIR)/session_test $(BINDIR)/scripted-agent $(BINDIR)/input-agent $(BINDIR)/stage5-agent $(BINDIR)/stage6-agent $(BINDIR)/stage7a-agent $(BINDIR)/stage7b-agent $(BINDIR)/stage7b-popup-agent
 
 $(BINDIR):
 	mkdir -p $@
@@ -36,6 +36,12 @@ $(BINDIR)/stage6-agent: $(COMMON) tests/stage6_agent.c | $(BINDIR)
 
 $(BINDIR)/stage7a-agent: $(COMMON) tests/stage7a_agent.c | $(BINDIR)
 	$(CC) $(CFLAGS) $^ -o $@
+
+$(BINDIR)/stage7b-agent: $(COMMON) tests/stage7b_agent.c | $(BINDIR)
+	$(CC) $(CFLAGS) $^ -o $@
+
+$(BINDIR)/stage7b-popup-agent: $(COMMON) tests/stage7b_popup_agent.c | $(BINDIR)
+	$(CC) $(CFLAGS) -DROOT_W=500U -DROOT_H=400U -DPOPUP_W=240U -DPOPUP_H=120U -DNESTED_W=110U -DNESTED_H=70U $^ -o $@
 
 test: $(BINDIR)/protocol_test $(BINDIR)/session_test
 	./$(BINDIR)/protocol_test

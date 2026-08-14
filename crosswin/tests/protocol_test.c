@@ -279,6 +279,17 @@ static void test_invalid_messages(void) {
     cw_store_u32_le(frame + CW_HEADER_SIZE + 24U, 8U);
     cw_store_u32_le(frame + CW_HEADER_SIZE + 28U, CW_PIXEL_FORMAT_BGRA8888);
     expect_decode_error(frame, CW_HEADER_SIZE + 47U, CW_DECODER_INVALID_PAYLOAD);
+
+    memset(frame, 0, sizeof(frame));
+    store_raw_header(frame, CW_PROTOCOL_MAGIC, CW_PROTOCOL_VERSION,
+                     CW_MESSAGE_WINDOW_CREATE, 24U);
+    cw_store_u32_le(frame + CW_HEADER_SIZE + 8U, 16U);
+    cw_store_u32_le(frame + CW_HEADER_SIZE + 12U, 16U);
+    expect_decode_error(frame, CW_HEADER_SIZE + 24U, CW_DECODER_INVALID_PAYLOAD);
+
+    cw_store_u64_le(frame + CW_HEADER_SIZE, 7U);
+    cw_store_u64_le(frame + CW_HEADER_SIZE + 16U, 7U);
+    expect_decode_error(frame, CW_HEADER_SIZE + 24U, CW_DECODER_INVALID_PAYLOAD);
 }
 
 static void test_damage_payloads(void) {

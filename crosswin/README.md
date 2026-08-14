@@ -1,20 +1,21 @@
-# CrossWin Stage 2–7A prototype
+# CrossWin Stage 2–7B prototype
 
 This directory adds the constrained TCP prototype on top of the Stage 1
-Geometry Oracle in `../geometry`.  It currently provides a single remote
-output, one `WS_POPUP` proxy window, scale 1, TCP, real Weston
-`xdg_toplevel + wl_shm` export, Linux-owned drag geometry, and persistent
-BGRA8888 framebuffers with incremental damage.  GPU/dmabuf, scene subtrees,
-multi-window policy and a high-performance transport remain later stages.
+Geometry Oracle in `../geometry`. It currently provides a single remote
+output, TCP, real Weston `xdg_toplevel + xdg_popup + wl_shm` export,
+Linux-owned drag geometry, scene-subtree composition (subsurface/alpha),
+per-pixel-alpha Windows proxy HWNDs, and persistent BGRA8888 framebuffers
+with incremental damage. GPU/dmabuf, multi-window focus policy, DPI and a
+high-performance transport remain later stages.
 
 ## Wire contract
 
-CWNP v2 has a fixed 24-byte header, explicitly serialized in little endian:
+CWNP v3 has a fixed 24-byte header, explicitly serialized in little endian:
 
 | Byte offset | Size | Field |
 | --- | ---: | --- |
 | 0 | 4 | magic (`CWNP`) |
-| 4 | 2 | protocol version (2) |
+| 4 | 2 | protocol version (3) |
 | 6 | 2 | message type |
 | 8 | 4 | flags |
 | 12 | 4 | payload length |
@@ -34,6 +35,12 @@ full `WINDOW_FRAME`. `WINDOW_RESIZE` replaces the persistent content buffer;
 it is followed by a full frame. Frame content versions and presentation
 versions are deliberately independent.
 
+`WINDOW_CREATE` is now 24 bytes: `{ window_id, surface_width, surface_height,
+parent_window_id }`. `parent_window_id=0` creates a toplevel proxy; a non-zero
+value creates an `xdg_popup` proxy owned by that HWND. The Windows side keeps
+no canonical geometry: it only applies the Linux-sent `WINDOW_PRESENT` crop
+and position.
+
 `WINDOW_PRESENT` is atomic: it contains surface-local source rect,
 remote-output-local destination rect, visibility, and a presentation sequence.
 For visible v1 presentation, source and destination dimensions must match, so
@@ -50,15 +57,16 @@ dropped rather than reinterpreted using the newest presentation.
 - `fake-server/`: deterministic Linux test pattern, TCP server, scripted Stage
   2 presentations, 64-entry presentation history, click crosshair, and a
   Linux-owned fake move grab.
-- `windows-agent/`: C++17 Win32/Winsock/GDI implementation.  `WSAAsyncSelect`
-  places socket and HWND events on one UI thread.  It uses `WS_POPUP`, a
-  top-down `StretchDIBits` DIB, signed `GET_X_LPARAM`, `ScreenToClient` for
-  wheels, `TrackMouseEvent`, and mouse capture.
+- `windows-agent/`: C++17 Win32/Winsock implementation. `WSAAsyncSelect`
+  uses one hidden transport HWND; every exported window has its own `WS_POPUP`
+  HWND. Popups are owned, `WS_EX_NOACTIVATE` windows. `UpdateLayeredWindow`
+  applies premultiplied BGRA alpha, while signed `GET_X_LPARAM`,
+  `ScreenToClient`, `TrackMouseEvent`, and capture preserve pointer routing.
 - `tests/`: deterministic parser, session, scripted presentation TCP, pointer
-  round-trip TCP, and Stage 7A damage/resync/CRC tests.
+  round-trip TCP, Stage 7A damage/resync/CRC, and Stage 7B scene/popup tests.
 
-详细的 Stage 7A 编译、Windows 视觉验证、静态拖动回归及本地自动失步恢复步骤见
-`../docs/stage7a-damage-test.txt`。
+详细的 Stage 7A 验证见 `../docs/stage7a-damage-test.txt`；Stage 7B 的 Linux
+自动验证和 Windows 必测步骤见 `../docs/stage7b-scene-popup-test.txt`。
 
 ## Linux checks
 

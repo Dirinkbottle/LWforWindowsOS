@@ -8,6 +8,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <memory>
+#include <unordered_map>
 
 namespace {
 
@@ -25,13 +27,13 @@ class AgentApplication {
 public:
     bool initialize(HINSTANCE instance, const AgentOptions &options) {
         options_ = options;
-        if (!proxy_.create(instance, &protocol_, options.trace_input,
-                           options.trace_frame, options.trace_damage)) {
-            std::fprintf(stderr, "[init] CreateWindowExW/RegisterClassW failed: Win32 error=%lu\n",
+        instance_ = instance;
+        if (!create_socket_window()) {
+            std::fprintf(stderr, "[init] transport window creation failed: Win32 error=%lu\n",
                          static_cast<unsigned long>(GetLastError()));
             return false;
         }
-        if (!protocol_.connect_to(options.host, options.port, proxy_.hwnd(),
+        if (!protocol_.connect_to(options.host, options.port, socket_window_,
                                   &AgentApplication::protocol_callback, this)) {
             return false; /* connect_to printed the precise WinSock stage/error. */
         }
@@ -44,24 +46,97 @@ public:
 
     int run() {
         MSG message{};
+        int get_message_result;
 
-        while (GetMessageW(&message, nullptr, 0U, 0U) > 0) {
-            if (message.message == CW_WM_SOCKET && message.hwnd == proxy_.hwnd()) {
-                if (!protocol_.on_socket_event(message.wParam, message.lParam)) {
-                    std::fprintf(stderr, "[socket] connection closed or protocol processing failed\n");
-                    protocol_.close();
-                    proxy_.destroy();
-                    return EXIT_FAILURE;
-                }
-                continue;
-            }
+        while ((get_message_result = GetMessageW(&message, nullptr, 0U, 0U)) > 0) {
             TranslateMessage(&message);
             DispatchMessageW(&message);
         }
-        return EXIT_SUCCESS;
+        return get_message_result == -1 ? EXIT_FAILURE : exit_code_;
     }
 
 private:
+    static constexpr wchar_t kTransportClassName[] = L"CrossWinTransportWindow";
+
+    static LRESULT CALLBACK transport_window_proc(HWND hwnd, UINT message,
+                                                  WPARAM wparam, LPARAM lparam) {
+        AgentApplication *application = nullptr;
+
+        if (message == WM_NCCREATE) {
+            const auto *create = reinterpret_cast<const CREATESTRUCTW *>(lparam);
+            application = static_cast<AgentApplication *>(create->lpCreateParams);
+            if (application == nullptr) {
+                return FALSE;
+            }
+            SetWindowLongPtrW(hwnd, GWLP_USERDATA,
+                              reinterpret_cast<LONG_PTR>(application));
+            return TRUE;
+        }
+        application = reinterpret_cast<AgentApplication *>(
+            GetWindowLongPtrW(hwnd, GWLP_USERDATA));
+        if (application != nullptr && message == CW_WM_SOCKET) {
+            if (!application->protocol_.on_socket_event(wparam, lparam)) {
+                std::fprintf(stderr, "[socket] connection closed or protocol processing failed\n");
+                application->protocol_.close();
+                application->windows_.clear();
+                application->exit_code_ = EXIT_FAILURE;
+                PostQuitMessage(EXIT_FAILURE);
+            }
+            return 0;
+        }
+        return DefWindowProcW(hwnd, message, wparam, lparam);
+    }
+
+    bool create_socket_window() {
+        WNDCLASSW window_class{};
+
+        window_class.lpfnWndProc = &AgentApplication::transport_window_proc;
+        window_class.hInstance = instance_;
+        window_class.lpszClassName = kTransportClassName;
+        if (RegisterClassW(&window_class) == 0 && GetLastError() != ERROR_CLASS_ALREADY_EXISTS) {
+            return false;
+        }
+        socket_window_ = CreateWindowExW(0U, kTransportClassName, L"", 0U,
+                                         0, 0, 0, 0, HWND_MESSAGE, nullptr,
+                                         instance_, this);
+        return socket_window_ != nullptr;
+    }
+
+    ProxyWindow *find_window(std::uint64_t window_id) {
+        const auto it = windows_.find(window_id);
+        return it == windows_.end() ? nullptr : it->second.get();
+    }
+
+    bool create_proxy(const CwWindowCreate &create) {
+        HWND owner = nullptr;
+        const bool is_popup = create.parent_window_id != 0U;
+        auto proxy = std::make_unique<ProxyWindow>();
+
+        if (create.window_id == 0U || find_window(create.window_id) != nullptr) {
+            return false;
+        }
+        if (is_popup) {
+            ProxyWindow *parent = find_window(create.parent_window_id);
+            if (parent == nullptr || parent->hwnd() == nullptr) {
+                return false;
+            }
+            owner = parent->hwnd();
+        }
+        if (!proxy->create(instance_, &protocol_, owner, is_popup, options_.trace_input,
+                           options_.trace_frame, options_.trace_damage) ||
+            !proxy->apply_create(create)) {
+            return false;
+        }
+        windows_.emplace(create.window_id, std::move(proxy));
+        if (options_.trace_protocol) {
+            std::printf("[window create] win=%llu parent=%llu popup=%u\n",
+                        static_cast<unsigned long long>(create.window_id),
+                        static_cast<unsigned long long>(create.parent_window_id),
+                        is_popup ? 1U : 0U);
+        }
+        return true;
+    }
+
     static bool protocol_callback(void *context, const CwHeader *header, const std::uint8_t *payload) {
         return static_cast<AgentApplication *>(context)->handle_protocol_message(*header, payload);
     }
@@ -82,22 +157,25 @@ private:
         case CW_MESSAGE_WINDOW_CREATE: {
             CwWindowCreate create{};
             return cw_decode_window_create(payload, header.payload_length, &create) &&
-                   proxy_.apply_create(create);
+                   create_proxy(create);
         }
         case CW_MESSAGE_WINDOW_FRAME: {
             CwWindowFrame frame{};
             return cw_decode_window_frame(payload, header.payload_length, &frame) &&
-                   proxy_.apply_frame(frame);
+                   find_window(frame.window_id) != nullptr &&
+                   find_window(frame.window_id)->apply_frame(frame);
         }
         case CW_MESSAGE_WINDOW_DAMAGE: {
             CwWindowDamage damage{};
             return cw_decode_window_damage(payload, header.payload_length, &damage) &&
-                   proxy_.apply_damage(damage);
+                   find_window(damage.window_id) != nullptr &&
+                   find_window(damage.window_id)->apply_damage(damage);
         }
         case CW_MESSAGE_WINDOW_RESIZE: {
             CwWindowResize resize{};
             return cw_decode_window_resize(payload, header.payload_length, &resize) &&
-                   proxy_.apply_resize(resize);
+                   find_window(resize.window_id) != nullptr &&
+                   find_window(resize.window_id)->apply_resize(resize);
         }
         case CW_MESSAGE_WINDOW_PRESENT: {
             CwWindowPresent present{};
@@ -115,14 +193,20 @@ private:
                             present.destination_x, present.destination_y,
                             present.destination_w, present.destination_h);
             }
-            return proxy_.apply_present(present);
+            return find_window(present.window_id) != nullptr &&
+                   find_window(present.window_id)->apply_present(present);
         }
         case CW_MESSAGE_WINDOW_DESTROY: {
             const std::uint64_t window_id = cw_load_u64_le(payload);
-            if (header.payload_length != 8U || !proxy_.apply_destroy(window_id)) {
+            const auto it = windows_.find(window_id);
+            if (header.payload_length != 8U || it == windows_.end() ||
+                !it->second->apply_destroy(window_id)) {
                 return false;
             }
-            PostQuitMessage(EXIT_SUCCESS);
+            windows_.erase(it);
+            if (windows_.empty()) {
+                PostQuitMessage(EXIT_SUCCESS);
+            }
             return true;
         }
         default:
@@ -131,8 +215,11 @@ private:
     }
 
     AgentOptions options_{};
+    HINSTANCE instance_ = nullptr;
+    HWND socket_window_ = nullptr;
     AgentProtocol protocol_{};
-    ProxyWindow proxy_{};
+    std::unordered_map<std::uint64_t, std::unique_ptr<ProxyWindow>> windows_{};
+    int exit_code_ = EXIT_SUCCESS;
 };
 
 bool parse_port(const char *text, std::uint16_t *out) {

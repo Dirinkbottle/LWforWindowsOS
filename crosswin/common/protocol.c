@@ -7,7 +7,7 @@
 enum {
     CW_HELLO_PAYLOAD_SIZE = 8U,
     CW_HELLO_ACK_PAYLOAD_SIZE = 8U,
-    CW_WINDOW_CREATE_PAYLOAD_SIZE = 16U,
+    CW_WINDOW_CREATE_PAYLOAD_SIZE = 24U,
     CW_WINDOW_FRAME_PREFIX_SIZE = 32U,
     CW_WINDOW_DAMAGE_PREFIX_SIZE = 32U,
     CW_WINDOW_DAMAGE_RECT_PREFIX_SIZE = 16U,
@@ -378,6 +378,8 @@ bool cw_message_is_valid(const CwHeader *header, const uint8_t *payload) {
                cw_load_u16_le(payload + 2U) == 0U;
     case CW_MESSAGE_WINDOW_CREATE:
         return header->payload_length == CW_WINDOW_CREATE_PAYLOAD_SIZE &&
+	       cw_load_u64_le(payload) != 0U &&
+	       cw_load_u64_le(payload) != cw_load_u64_le(payload + 16U) &&
                valid_frame_surface(cw_load_u32_le(payload + 8U),
                                    cw_load_u32_le(payload + 12U));
     case CW_MESSAGE_WINDOW_FRAME:
@@ -654,7 +656,7 @@ bool cw_decode_window_create(const uint8_t *payload, uint32_t length, CwWindowCr
         return false;
     }
     *out = (CwWindowCreate){cw_load_u64_le(payload), cw_load_u32_le(payload + 8U),
-                            cw_load_u32_le(payload + 12U)};
+                            cw_load_u32_le(payload + 12U), cw_load_u64_le(payload + 16U)};
     return true;
 }
 
