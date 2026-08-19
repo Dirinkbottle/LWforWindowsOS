@@ -3,7 +3,6 @@ WARNINGS = -Wall -Wextra -Wpedantic -Werror
 CFLAGS ?= -std=c11 -O2 $(WARNINGS)
 GEOMETRY_DIR = ../geometry
 COMMON = common/protocol.c
-PIXEL = common/pixel.c
 SESSION = fake-server/pattern.c fake-server/session.c
 BINDIR = build
 
@@ -20,7 +19,7 @@ $(BINDIR)/fake-server: $(COMMON) $(SESSION) fake-server/main.c $(GEOMETRY_DIR)/g
 $(BINDIR)/protocol_test: $(COMMON) tests/protocol_test.c | $(BINDIR)
 	$(CC) $(CFLAGS) $^ -o $@
 
-$(BINDIR)/pixel_test: $(PIXEL) tests/pixel_test.c | $(BINDIR)
+$(BINDIR)/pixel_test: tests/pixel_test.c | $(BINDIR)
 	$(CC) $(CFLAGS) $^ -o $@
 
 $(BINDIR)/session_test: $(COMMON) $(SESSION) tests/session_test.c $(GEOMETRY_DIR)/geometry.c | $(BINDIR)
