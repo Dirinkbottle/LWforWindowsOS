@@ -71,6 +71,12 @@ bool windows_key_to_linux_evdev(WPARAM virtual_key, LPARAM lparam, std::uint32_t
 
 ProxyWindow::ProxyWindow()
     : hwnd_(nullptr),
+      present_dc_(nullptr),
+      present_bitmap_(nullptr),
+      present_old_bitmap_(nullptr),
+      present_bits_(nullptr),
+      present_width_(0),
+      present_height_(0),
       protocol_(nullptr),
       is_popup_(false),
       window_id_(0U),
@@ -127,6 +133,7 @@ void ProxyWindow::destroy() {
         DestroyWindow(hwnd_);
         hwnd_ = nullptr;
     }
+    destroy_present_surface();
     framebuffer_.clear();
     window_id_ = 0U;
     frame_sequence_ = 0U;
@@ -336,35 +343,105 @@ bool ProxyWindow::apply_present(const CwWindowPresent &present) {
     }
     presentation_ = present;
     if (!present.visible) {
-		physical_destination_ = Rect{};
+        physical_destination_ = Rect{};
         ShowWindow(hwnd_, SW_HIDE);
         return protocol_->send_present_ack(present.window_id, present.presentation_sequence);
     }
-	logical_destination = Rect{present.destination_x, present.destination_y,
-				   present.destination_w, present.destination_h};
-	if (!logical_rect_to_physical(logical_destination, output_scale_,
-				      &physical_destination_) ||
-	    rect_is_empty(physical_destination_)) {
-		return false;
-	}
+    logical_destination = Rect{present.destination_x, present.destination_y,
+                               present.destination_w, present.destination_h};
+    if (!logical_rect_to_physical(logical_destination, output_scale_,
+                                  &physical_destination_) ||
+        rect_is_empty(physical_destination_)) {
+        return false;
+    }
     if (!update_layered_window()) {
         return false;
     }
     return protocol_->send_present_ack(present.window_id, present.presentation_sequence);
 }
 
-bool ProxyWindow::update_layered_window() {
+void ProxyWindow::destroy_present_surface() {
+    if (present_old_bitmap_ != nullptr && present_dc_ != nullptr) {
+        (void)SelectObject(present_dc_, present_old_bitmap_);
+    }
+    if (present_bitmap_ != nullptr) {
+        (void)DeleteObject(present_bitmap_);
+    }
+    if (present_dc_ != nullptr) {
+        (void)DeleteDC(present_dc_);
+    }
+    present_dc_ = nullptr;
+    present_bitmap_ = nullptr;
+    present_old_bitmap_ = nullptr;
+    present_bits_ = nullptr;
+    present_width_ = 0;
+    present_height_ = 0;
+}
+
+bool ProxyWindow::ensure_present_surface(HDC screen, int width, int height) {
     BITMAPINFO target_info{};
+    HDC memory = nullptr;
+    HBITMAP bitmap = nullptr;
+    HGDIOBJ old_bitmap = nullptr;
+    void *bits = nullptr;
+    DWORD error = ERROR_SUCCESS;
+
+    if (screen == nullptr || width <= 0 || height <= 0) {
+        SetLastError(ERROR_INVALID_PARAMETER);
+        return false;
+    }
+    if (present_dc_ != nullptr && present_bitmap_ != nullptr && present_bits_ != nullptr &&
+        present_width_ == width && present_height_ == height) {
+        return true;
+    }
+
+    target_info.bmiHeader.biSize = sizeof(target_info.bmiHeader);
+    target_info.bmiHeader.biWidth = width;
+    target_info.bmiHeader.biHeight = -height;
+    target_info.bmiHeader.biPlanes = 1;
+    target_info.bmiHeader.biBitCount = 32;
+    target_info.bmiHeader.biCompression = BI_RGB;
+
+    memory = CreateCompatibleDC(screen);
+    if (memory == nullptr) {
+        return false;
+    }
+    bitmap = CreateDIBSection(screen, &target_info, DIB_RGB_COLORS, &bits, nullptr, 0U);
+    if (bitmap == nullptr || bits == nullptr) {
+        error = GetLastError();
+        (void)DeleteDC(memory);
+        SetLastError(error);
+        return false;
+    }
+    old_bitmap = SelectObject(memory, bitmap);
+    if (old_bitmap == nullptr || old_bitmap == HGDI_ERROR) {
+        error = GetLastError();
+        (void)DeleteObject(bitmap);
+        (void)DeleteDC(memory);
+        SetLastError(error);
+        return false;
+    }
+
+    /* Build the replacement completely before dropping the old cache.  A
+     * transient GDI allocation failure therefore never corrupts the existing
+     * selected-object relationship. */
+    destroy_present_surface();
+    present_dc_ = memory;
+    present_bitmap_ = bitmap;
+    present_old_bitmap_ = old_bitmap;
+    present_bits_ = bits;
+    present_width_ = width;
+    present_height_ = height;
+    return true;
+}
+
+bool ProxyWindow::update_layered_window() {
     BITMAPINFO source_info{};
     BLENDFUNCTION blend{AC_SRC_OVER, 0U, 255U, AC_SRC_ALPHA};
     POINT destination{physical_destination_.x, physical_destination_.y};
     POINT source{0, 0};
     SIZE size{physical_destination_.w, physical_destination_.h};
     HDC screen = nullptr;
-    HDC memory = nullptr;
-    HBITMAP bitmap = nullptr;
-    HGDIOBJ old_bitmap = nullptr;
-    void *bits = nullptr;
     bool ok = false;
     DWORD error = ERROR_SUCCESS;
 
@@ -385,12 +462,6 @@ bool ProxyWindow::update_layered_window() {
         error = GetLastError();
         goto out;
     }
-    target_info.bmiHeader.biSize = sizeof(target_info.bmiHeader);
-    target_info.bmiHeader.biWidth = physical_destination_.w;
-    target_info.bmiHeader.biHeight = -physical_destination_.h;
-    target_info.bmiHeader.biPlanes = 1;
-    target_info.bmiHeader.biBitCount = 32;
-    target_info.bmiHeader.biCompression = BI_RGB;
     source_info.bmiHeader.biSize = sizeof(source_info.bmiHeader);
     source_info.bmiHeader.biWidth = static_cast<LONG>(surface_width_);
     source_info.bmiHeader.biHeight = -static_cast<LONG>(surface_height_);
@@ -402,22 +473,11 @@ bool ProxyWindow::update_layered_window() {
         error = GetLastError();
         goto out;
     }
-    memory = CreateCompatibleDC(screen);
-    if (memory == nullptr) {
+    if (!ensure_present_surface(screen, physical_destination_.w, physical_destination_.h)) {
         error = GetLastError();
         goto out;
     }
-    bitmap = CreateDIBSection(memory, &target_info, DIB_RGB_COLORS, &bits, nullptr, 0U);
-    if (bitmap == nullptr || bits == nullptr) {
-        error = GetLastError();
-        goto out;
-    }
-    old_bitmap = SelectObject(memory, bitmap);
-    if (old_bitmap == nullptr || old_bitmap == HGDI_ERROR) {
-        error = GetLastError();
-        goto out;
-    }
-    if (StretchDIBits(memory, 0, 0, physical_destination_.w, physical_destination_.h,
+    if (StretchDIBits(present_dc_, 0, 0, physical_destination_.w, physical_destination_.h,
                       presentation_.source_x, presentation_.source_y,
                       presentation_.source_w, presentation_.source_h,
                       framebuffer_.data(), &source_info, DIB_RGB_COLORS,
@@ -425,21 +485,12 @@ bool ProxyWindow::update_layered_window() {
         error = GetLastError();
         goto out;
     }
-    ok = UpdateLayeredWindow(hwnd_, screen, &destination, &size, memory, &source,
+    ok = UpdateLayeredWindow(hwnd_, screen, &destination, &size, present_dc_, &source,
                              0U, &blend, ULW_ALPHA) != FALSE;
     if (!ok) {
         error = GetLastError();
     }
 out:
-    if (old_bitmap != nullptr && memory != nullptr) {
-        SelectObject(memory, old_bitmap);
-    }
-    if (bitmap != nullptr) {
-        DeleteObject(bitmap);
-    }
-    if (memory != nullptr) {
-        DeleteDC(memory);
-    }
     if (screen != nullptr) {
         ReleaseDC(nullptr, screen);
     }
@@ -476,6 +527,7 @@ bool ProxyWindow::apply_destroy(std::uint64_t window_id) {
     frame_sequence_ = 0U;
     presentation_ = CwWindowPresent{};
     physical_destination_ = Rect{};
+    destroy_present_surface();
     DestroyWindow(hwnd_);
     hwnd_ = nullptr;
     return true;
@@ -690,12 +742,12 @@ LRESULT ProxyWindow::handle_message(UINT message, WPARAM wparam, LPARAM lparam) 
     }
     case WM_MOUSEMOVE: {
         CwPointerMotion motion{};
-		CwPointerLocation location{};
+        CwPointerLocation location{};
 
-		if (!make_pointer_location(
-				Point{GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)}, &location)) {
-			return 0;
-		}
+        if (!make_pointer_location(
+                Point{GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)}, &location)) {
+            return 0;
+        }
         if (!tracking_mouse_) {
             TRACKMOUSEEVENT tracking{sizeof(tracking), TME_LEAVE, hwnd_, 0U};
             tracking_mouse_ = TrackMouseEvent(&tracking) != FALSE;
@@ -714,11 +766,11 @@ LRESULT ProxyWindow::handle_message(UINT message, WPARAM wparam, LPARAM lparam) 
     case WM_MOUSELEAVE:
         tracking_mouse_ = false;
         {
-			CwPointerLocation location{};
-			if (current_cursor_location(&location)) {
-				trace_location("POINTER_LEAVE", location);
-				(void)protocol_->send_pointer_location(CW_MESSAGE_POINTER_LEAVE, location);
-			}
+            CwPointerLocation location{};
+            if (current_cursor_location(&location)) {
+                trace_location("POINTER_LEAVE", location);
+                (void)protocol_->send_pointer_location(CW_MESSAGE_POINTER_LEAVE, location);
+            }
         }
         return 0;
     case WM_LBUTTONDOWN:
