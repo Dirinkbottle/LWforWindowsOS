@@ -50,10 +50,18 @@ private:
     void send_key(UINT message, WPARAM wparam, LPARAM lparam);
     void release_pressed_keys();
     bool request_frame_resync(const char *reason);
+    bool ensure_present_surface(HDC screen, int width, int height);
+    void destroy_present_surface();
     bool update_layered_window();
     void paint(HDC dc);
 
     HWND hwnd_;
+    HDC present_dc_;
+    HBITMAP present_bitmap_;
+    HGDIOBJ present_old_bitmap_;
+    void *present_bits_;
+    int present_width_;
+    int present_height_;
     AgentProtocol *protocol_;
     bool is_popup_;
     std::uint64_t window_id_;
