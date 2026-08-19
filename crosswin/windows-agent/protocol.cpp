@@ -16,6 +16,9 @@ AgentProtocol::AgentProtocol()
       transmit_offset_(0U),
       next_wire_sequence_(1U) {
     cw_decoder_init(&decoder_);
+    /* Most outbound traffic is tiny input/ACK messages. Keep a little spare
+     * capacity so the UI hot path does not allocate for every mouse/key event. */
+    transmit_queue_.reserve(4096U);
 }
 
 AgentProtocol::~AgentProtocol() {
@@ -30,6 +33,7 @@ bool AgentProtocol::connect_to(
     CwMessageCallback callback,
     void *callback_context) {
     sockaddr_in address{};
+    BOOL no_delay = TRUE;
 
     if (host == nullptr || notification_window == nullptr || callback == nullptr || connected()) {
         std::fprintf(stderr, "[init] invalid socket setup arguments\n");
@@ -50,6 +54,15 @@ bool AgentProtocol::connect_to(
     if (connect(socket_, reinterpret_cast<const sockaddr *>(&address), sizeof(address)) == SOCKET_ERROR) {
         std::fprintf(stderr, "[init] TCP connect to %s:%u failed: WinSock error=%d\n",
                      host, static_cast<unsigned>(port), WSAGetLastError());
+        close();
+        return false;
+    }
+    /* ACK/input messages are latency-sensitive and typically much smaller than
+     * an MSS. Do not let Nagle hold them behind an outstanding packet. */
+    if (setsockopt(socket_, IPPROTO_TCP, TCP_NODELAY,
+                   reinterpret_cast<const char *>(&no_delay),
+                   static_cast<int>(sizeof(no_delay))) == SOCKET_ERROR) {
+        std::fprintf(stderr, "[init] TCP_NODELAY failed: WinSock error=%d\n", WSAGetLastError());
         close();
         return false;
     }
@@ -122,7 +135,9 @@ bool AgentProtocol::flush_transmit_queue() {
 }
 
 bool AgentProtocol::drain_receive_queue() {
-    std::array<std::uint8_t, 8192U> bytes{};
+    /* Full-frame traffic commonly arrives in 64 KiB-ish TCP chunks. 8 KiB
+     * forced needless recv()/decoder iterations on every socket notification. */
+    std::array<std::uint8_t, 64U * 1024U> bytes{};
 
     for (;;) {
         const int received = recv(socket_, reinterpret_cast<char *>(bytes.data()),
