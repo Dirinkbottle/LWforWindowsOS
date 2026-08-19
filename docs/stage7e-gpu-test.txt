@@ -1,0 +1,78 @@
+Stage 7E: GPU / dmabuf readback gate
+====================================
+
+Goal
+----
+
+Keep the existing CWNP v6 CPU/BGRA transport and Stage 7A damage protocol,
+but accept renderer-backed GPU buffers as CrossWin window content.  This is a
+compatibility readback stage, not cross-VM GPU-handle sharing.
+
+The pinned Weston tree is d1dd22307afb5cc6773e9a12611b520f14bf136f.  Its GL
+renderer imports WESTON_BUFFER_DMABUF and weston_surface_copy_content() renders
+the current surface texture/EGLImage into a temporary FBO, then glReadPixels()
+PIXMAN_a8b8g8r8 data.  In byte-address order on little-endian this is RGBA;
+CWNP/UpdateLayeredWindow needs premultiplied BGRA, so only R/B are swapped.
+Alpha must not be unpremultiplied.
+
+Required exporter timing
+------------------------
+
+The existing wl_shm direct-copy path stays unchanged.
+
+For a dmabuf-backed surface commit:
+
+1. Mark that surface/window content pending; do not read it immediately from
+   the desktop commit callback.
+2. Schedule a repaint of crosswin-remote.
+3. After the remote output has completed the repaint frame (the renderer
+   attach step has therefore seen the new buffer), read the pending surface
+   rectangle with weston_surface_copy_content().
+4. Use crosswin/weston/stage7e_readback.h for checked staging allocation and
+   RGBA -> BGRA conversion.
+5. Feed those BGRA bytes into the already-existing subtree composition and
+   WINDOW_FRAME / WINDOW_DAMAGE path.  Presentation geometry remains unchanged.
+6. If readback fails, keep the last good frame and request/emit a later full
+   frame rather than publishing partially updated staging memory.
+
+The GL renderer is required for dmabuf import.  Stage 7E must not launch the
+Weston session with --use-pixman.  Keep the old wl_shm path available so simple
+software clients remain a regression check.
+
+Minimal gate
+------------
+
+Only these checks are required for this stage:
+
+1. Pure conversion/defensive check:
+
+       make -C crosswin test
+
+   `pixel_test: PASS` must appear.  It checks R/B conversion, malformed byte
+   counts and NULL/non-empty input.
+
+2. One real GPU client under the GL renderer (for example weston-simple-egl or
+   another known EGL Wayland client):
+
+   - confirm CrossWin identifies renderer-backed/dmabuf content;
+   - drag the entire animated window onto crosswin-remote;
+   - Windows must keep receiving live frames after the Linux preview no longer
+     contains the window;
+   - resize once and verify the next full frame establishes the new size;
+   - no red/blue swap, vertical flip or alpha fringe is allowed.
+
+3. One existing wl_shm client: verify it still uses the direct-copy path and
+   remains visually unchanged.
+
+No Stage 7B/7C stress matrix is required here.  The important failure mode is a
+GPU window freezing once fully remote; that specifically catches readback that
+runs before Weston renderer attach.
+
+Post-stage hot-path optimization
+--------------------------------
+
+The Windows agent optimization paired with this stage keeps one memory DC +
+top-down DIB per ProxyWindow and rebuilds it only when the physical destination
+size changes.  It also enables TCP_NODELAY for small ACK/input packets and uses
+a 64 KiB receive chunk for frame traffic.  These are transport/presentation
+optimizations only; they do not change CWNP semantics.
