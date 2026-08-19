@@ -3,12 +3,13 @@ WARNINGS = -Wall -Wextra -Wpedantic -Werror
 CFLAGS ?= -std=c11 -O2 $(WARNINGS)
 GEOMETRY_DIR = ../geometry
 COMMON = common/protocol.c
+PIXEL = common/pixel.c
 SESSION = fake-server/pattern.c fake-server/session.c
 BINDIR = build
 
 .PHONY: all test integration input-integration stage7d-integration stage8-integration sanitize clean
 
-all: $(BINDIR)/fake-server $(BINDIR)/protocol_test $(BINDIR)/session_test $(BINDIR)/scripted-agent $(BINDIR)/input-agent $(BINDIR)/stage5-agent $(BINDIR)/stage6-agent $(BINDIR)/stage7a-agent $(BINDIR)/stage7b-agent $(BINDIR)/stage7b-popup-agent $(BINDIR)/stage7c-agent $(BINDIR)/stage7c-stress-agent $(BINDIR)/stage7c-reconnect-agent $(BINDIR)/stage7d-geometry-agent $(BINDIR)/stage8-agent
+all: $(BINDIR)/fake-server $(BINDIR)/protocol_test $(BINDIR)/pixel_test $(BINDIR)/session_test $(BINDIR)/scripted-agent $(BINDIR)/input-agent $(BINDIR)/stage5-agent $(BINDIR)/stage6-agent $(BINDIR)/stage7a-agent $(BINDIR)/stage7b-agent $(BINDIR)/stage7b-popup-agent $(BINDIR)/stage7c-agent $(BINDIR)/stage7c-stress-agent $(BINDIR)/stage7c-reconnect-agent $(BINDIR)/stage7d-geometry-agent $(BINDIR)/stage8-agent
 
 $(BINDIR):
 	mkdir -p $@
@@ -17,6 +18,9 @@ $(BINDIR)/fake-server: $(COMMON) $(SESSION) fake-server/main.c $(GEOMETRY_DIR)/g
 	$(CC) $(CFLAGS) -I$(GEOMETRY_DIR) -Icommon $^ -o $@
 
 $(BINDIR)/protocol_test: $(COMMON) tests/protocol_test.c | $(BINDIR)
+	$(CC) $(CFLAGS) $^ -o $@
+
+$(BINDIR)/pixel_test: $(PIXEL) tests/pixel_test.c | $(BINDIR)
 	$(CC) $(CFLAGS) $^ -o $@
 
 $(BINDIR)/session_test: $(COMMON) $(SESSION) tests/session_test.c $(GEOMETRY_DIR)/geometry.c | $(BINDIR)
@@ -58,8 +62,9 @@ $(BINDIR)/stage7d-geometry-agent: $(COMMON) tests/stage7d_geometry_agent.c | $(B
 $(BINDIR)/stage8-agent: $(COMMON) tests/stage8_agent.c | $(BINDIR)
 	$(CC) $(CFLAGS) $^ -o $@
 
-test: $(BINDIR)/protocol_test $(BINDIR)/session_test
+test: $(BINDIR)/protocol_test $(BINDIR)/pixel_test $(BINDIR)/session_test
 	./$(BINDIR)/protocol_test
+	./$(BINDIR)/pixel_test
 	./$(BINDIR)/session_test
 	$(MAKE) -C $(GEOMETRY_DIR) test
 
